@@ -1,0 +1,8 @@
+# Plain LF line endings everywhere, whatever the machine's git settings.
+* text=auto eol=lf
+# PandaPools' files are hash-pinned (vendor/pandapools/SHA256SUMS): byte for byte, never converted.
+vendor/pandapools/** -text
+# The working notes stay in the private backup, never in the public release (tools/publish-public.mjs).
+docs/** export-ignore
+AGENTS.md export-ignore
+CLAUDE.md export-ignore

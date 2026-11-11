@@ -1,0 +1,1540 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Minima Venues</title>
+<link rel="icon" type="image/svg+xml" href="/logo.svg">
+<script>try { if (localStorage.getItem('help') === 'off') document.documentElement.classList.add('no-help'); const t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t; if (localStorage.getItem('mode') === 'paper') document.documentElement.dataset.mode = 'paper'; } catch {}</script>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f4f3ef; --surface: #fcfcfb; --sunken: #f0efec; --line: #e2e1db; --grid: #ebeae5;
+  --text: #0b0b0b; --text-2: #52514e; --text-3: #6f6e69; --accent: #256abf; --accent-text: #ffffff;
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100; --series-5: #e87ba4;
+  --good: #0b7f0b; --warn: #8a5d00; --crit: #c02f2f; --banner: #fbf1da;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --page: #24262b; --surface: #2d3036; --sunken: #363940; --line: #43474f; --grid: #3a3d44;
+    --text: #f0efec; --text-2: #c3c2b7; --text-3: #9a9990; --accent: #5598e7; --accent-text: #0b0b0b;
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181;
+    --good: #4ec04e; --warn: #fab219; --crit: #ec7070; --banner: #33290f;
+  }
+}
+/* Chosen themes (Settings > Appearance): each sets every token, so it wins over the system's light or dark. */
+:root[data-theme="paper"] { color-scheme: light; --page: #f4f3ef; --surface: #fcfcfb; --sunken: #f0efec; --line: #e2e1db; --grid: #ebeae5; --text: #0b0b0b; --text-2: #52514e; --text-3: #6f6e69; --accent: #256abf; --banner: #fbf1da; --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100; --series-5: #e87ba4; --good: #0b7f0b; --warn: #8a5d00; --crit: #c02f2f; --accent-text: #ffffff; }
+:root[data-theme="sky"] { color-scheme: light; --page: #e6f0fb; --surface: #f7fbff; --sunken: #dae8f8; --line: #c5d9f0; --grid: #d4e3f5; --text: #0d2238; --text-2: #3d556e; --text-3: #5a7189; --accent: #1f6fd1; --banner: #fff1cf; --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100; --series-5: #e87ba4; --good: #0b7f0b; --warn: #8a5d00; --crit: #c02f2f; --accent-text: #ffffff; }
+:root[data-theme="mint"] { color-scheme: light; --page: #e5f5ee; --surface: #f7fdfa; --sunken: #d8eee4; --line: #c1e1d2; --grid: #d0e8dc; --text: #0f2a20; --text-2: #3c5a4d; --text-3: #587669; --accent: #0b7a5a; --banner: #fbf1da; --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100; --series-5: #e87ba4; --good: #0b7f0b; --warn: #8a5d00; --crit: #c02f2f; --accent-text: #ffffff; }
+:root[data-theme="sunrise"] { color-scheme: light; --page: #fff1e0; --surface: #fffaf3; --sunken: #fbe7cf; --line: #efd6b6; --grid: #f5e2c8; --text: #2a1d10; --text-2: #5e4a36; --text-3: #7a6550; --accent: #c4420c; --banner: #fde2b8; --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100; --series-5: #e87ba4; --good: #0b7f0b; --warn: #8a5d00; --crit: #c02f2f; --accent-text: #ffffff; }
+:root[data-theme="ocean"] { color-scheme: dark; --page: #15304d; --surface: #1d3d5e; --sunken: #24486c; --line: #345b81; --grid: #2b5075; --text: #eef5fb; --text-2: #c3d4e4; --text-3: #9ab1c7; --accent: #74bbff; --banner: #3d3415; --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181; --good: #4ec04e; --warn: #fab219; --crit: #ec7070; --accent-text: #0b0b0b; }
+:root[data-theme="plum"] { color-scheme: dark; --page: #2b2140; --surface: #392b4f; --sunken: #43335c; --line: #58476f; --grid: #4b3c63; --text: #f4effa; --text-2: #d3c7e3; --text-3: #ab9cc1; --accent: #c7a8ff; --banner: #3f3214; --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181; --good: #4ec04e; --warn: #fab219; --crit: #ec7070; --accent-text: #0b0b0b; }
+:root[data-theme="forest"] { color-scheme: dark; --page: #1c3529; --surface: #26463a; --sunken: #2e5244; --line: #426858; --grid: #375c4d; --text: #eef6f0; --text-2: #c4d8cc; --text-3: #9bb5a7; --accent: #8fd0ff; --banner: #3d3415; --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181; --good: #4ec04e; --warn: #fab219; --crit: #ec7070; --accent-text: #0b0b0b; }
+:root[data-theme="charcoal"] { color-scheme: dark; --page: #24262b; --surface: #2d3036; --sunken: #363940; --line: #43474f; --grid: #3a3d44; --text: #f0efec; --text-2: #c3c2b7; --text-3: #9a9990; --accent: #5598e7; --banner: #33290f; --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181; --good: #4ec04e; --warn: #fab219; --crit: #ec7070; --accent-text: #0b0b0b; }
+.themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+.theme-btn { all: unset; cursor: pointer; border-radius: 10px; border: 2px solid var(--line); overflow: hidden; background: var(--surface); }
+.theme-btn[aria-pressed="true"] { border-color: var(--accent); }
+.theme-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.theme-btn .sw { display: flex; height: 44px; }
+.theme-btn .sw i { flex: 1; }
+.theme-btn .nm { display: block; padding: 6px 9px; font-size: 13px; color: var(--text); }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--page); color: var(--text); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 18px 16px 48px; }
+header { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+h1 { font-size: 20px; margin: 0; letter-spacing: -0.01em; }
+h1.brand { display: flex; align-items: center; gap: 10px; } h1.brand img { display: block; border-radius: 7px; }
+h2 { font-size: 15px; margin: 0; }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.pill { font-size: 13px; color: var(--text-2); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+.pill b { font-weight: 600; }
+.good { color: var(--good); } .warn { color: var(--warn); } .crit { color: var(--crit); }
+nav { display: flex; gap: 2px; margin: 16px 0 14px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+nav button { all: unset; cursor: pointer; padding: 9px 14px; color: var(--text-2); border-bottom: 2px solid transparent; white-space: nowrap; font-weight: 500; }
+nav button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+nav button:focus-visible, .btn:focus-visible, .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.tab { display: none; } .tab.on { display: grid; gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.card > .head { display: flex; flex-wrap: wrap; gap: 4px 12px; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.sub { color: var(--text-2); font-size: 13px; }
+.src { color: var(--text-2); font-size: 13px; margin: 0 0 10px; }
+.src code, td code { font: 12.5px ui-monospace, Consolas, monospace; }
+.tiles { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.tile .label { color: var(--text-2); font-size: 13px; }
+.tile .value { font-size: 25px; font-weight: 600; margin-top: 2px; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tile .note { color: var(--text-3); font-size: 13px; min-height: 19px; }
+.two { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th { text-align: right; color: var(--text-2); font-weight: 500; font-size: 13px; padding: 5px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { text-align: right; padding: 5px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; padding-left: 0; }
+td.left, th.left { text-align: left; }
+tr:last-child td { border-bottom: 0; }
+.muted { color: var(--text-3); }
+.empty { color: var(--text-2); padding: 10px 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--text-2); margin-bottom: 6px; min-height: 19px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.chart { position: relative; width: 100%; touch-action: pan-y; }
+.chart svg { display: block; }
+.chart .msg { position: absolute; inset: 0; display: grid; place-items: center; color: var(--text-2); text-align: center; padding: 0 20px; }
+.tip { position: absolute; z-index: 5; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; font-size: 13px; box-shadow: 0 3px 12px rgba(0,0,0,.14); white-space: nowrap; display: none; font-variant-numeric: tabular-nums; }
+.tip .t { color: var(--text-2); margin-bottom: 3px; }
+.tip .row { display: flex; justify-content: space-between; gap: 16px; }
+.tip i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; }
+.seg { display: inline-flex; background: var(--sunken); border-radius: 8px; padding: 2px; }
+.seg button { all: unset; cursor: pointer; padding: 3px 12px; border-radius: 6px; color: var(--text-2); font-size: 13px; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+details summary { cursor: pointer; color: var(--text-2); font-size: 13px; margin-top: 8px; }
+.form { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.form.stack { grid-template-columns: 1fr; }
+.form.stack .field input:not([type=checkbox]) { font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
+.field label { display: block; font-size: 13px; color: var(--text-2); margin-bottom: 3px; }
+.field input { width: 100%; font: inherit; color: var(--text); background: var(--page); border: 1px solid var(--line); border-radius: 7px; padding: 6px 9px; font-variant-numeric: tabular-nums; }
+.field input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
+.field input.bad { border-color: var(--crit); }
+.field select { width: 100%; font: inherit; color: var(--text); background: var(--page); border: 1px solid var(--line); border-radius: 7px; padding: 6px 9px; }
+.checks { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.subhead { font-size: 14px; margin: 18px 0 4px; }
+.about { max-width: 820px; line-height: 1.55; }
+.about-head { display: flex; gap: 14px; align-items: center; margin-bottom: 10px; } .about-head img { border-radius: 12px; }
+.about ol, .about ul { padding-left: 20px; } .about li { margin: 4px 0; }
+.about a { color: var(--accent); }
+.help-dot, .help-btn { display: inline-flex; align-items: center; justify-content: center; width: 17px; height: 17px; border-radius: 50%; font-size: 11px; font-weight: 700; border: 1px solid var(--line); color: var(--text-2); background: var(--sunken); }
+.help-btn { all: unset; display: inline-flex; align-items: center; justify-content: center; width: 17px; height: 17px; border-radius: 50%; font-size: 11px; font-weight: 700; border: 1px solid var(--line); color: var(--text-2); background: var(--sunken); cursor: pointer; margin-left: 6px; vertical-align: 1px; }
+.help-btn:hover, .help-btn[aria-expanded="true"] { color: var(--accent-text); background: var(--accent); border-color: var(--accent); }
+.help-text { font-size: 12.5px; line-height: 1.45; color: var(--text-2); background: var(--sunken); border-left: 3px solid var(--accent); border-radius: 6px; padding: 7px 10px; margin: 6px 0; }
+html.no-help .help-btn, html.no-help .help-text { display: none !important; }
+.ticket { max-width: 640px; }
+.tk-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.tk-venue { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.tk-venue select { font: inherit; font-weight: 600; color: var(--text); background: var(--page); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; min-width: 240px; }
+.tk-arm { font-size: 13px; text-decoration: none; color: var(--text-2); } .tk-arm:hover { text-decoration: underline; }
+.tk-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.tk-side button { padding: 6px 26px; font-weight: 600; }
+.tk-side button[data-side="buy"][aria-pressed="true"] { background: var(--good); color: var(--accent-text); }
+.tk-side button[data-side="sell"][aria-pressed="true"] { background: var(--crit); color: var(--accent-text); }
+#t-type button[disabled] { opacity: .4; cursor: default; }
+.tk-form { grid-template-columns: 1fr 1fr; }
+.tk-form input:disabled { opacity: .7; }
+.tk-pcts { display: flex; gap: 6px; margin-top: 8px; }
+.tk-pcts .btn { padding: 3px 10px; font-size: 12.5px; font-weight: 500; }
+.tk-what { margin: 10px 0 0; }
+.btn.tk-send.buy { background: var(--good); border-color: var(--good); color: var(--accent-text); }
+.btn.tk-send.sell { background: var(--crit); border-color: var(--crit); color: var(--accent-text); }
+.pill.fresh { background: color-mix(in srgb, var(--good) 22%, transparent); transition: background .4s; }
+.tile.link, .pill.link { cursor: pointer; } .tile.link:hover .value, .pill.link:hover { text-decoration: underline; }
+@media (max-width: 560px) { .tk-form { grid-template-columns: 1fr; } .tk-venue select { min-width: 0; width: 100%; } .tk-venue { width: 100%; } }
+.mm-tabs { margin-bottom: 14px; flex-wrap: wrap; }
+.mm-pane[hidden], .ob-detail[hidden], #mmTabs[hidden] { display: none; }
+.ob-detail { margin-top: 14px; }
+.nav-right { margin-left: auto; }
+:root[data-mode="paper"] { --accent: #7a5cf0; }
+.mode-bar { cursor: pointer; margin: 0 0 12px; padding: 9px 14px; border-radius: 10px; font-size: 13.5px; color: var(--text);
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, #7a5cf0 22%, transparent) 0 12px, color-mix(in srgb, #7a5cf0 10%, transparent) 12px 24px);
+  border: 1px solid color-mix(in srgb, #7a5cf0 45%, transparent); }
+.mode-bar b { margin-right: 6px; }
+.mode-opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.mode-opt { all: unset; cursor: pointer; border: 2px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--surface); }
+.mode-opt[aria-pressed="true"] { border-color: var(--accent); }
+.mode-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mode-opt .t { font-weight: 600; display: block; margin-bottom: 4px; } .mode-opt .d { font-size: 13px; color: var(--text-2); }
+.set-index { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; font-size: 13.5px; position: sticky; top: 0; z-index: 2; }
+.set-index a { color: var(--accent); text-decoration: none; } .set-index a:hover { text-decoration: underline; }
+.set-index .sep { flex-basis: 100%; height: 0; }
+.set-group { font-size: 15px; margin: 22px 0 10px; color: var(--text-2); }
+#tab-settings .card, #tab-connections .card { scroll-margin-top: 140px; }
+.field textarea { width: 100%; font: 13px/1.5 ui-monospace, Consolas, monospace; color: var(--text); background: var(--page); border: 1px solid var(--line); border-radius: 7px; padding: 6px 9px; resize: vertical; }
+table.ob tr.mid td { white-space: normal; }
+.ob-head { flex-wrap: wrap; gap: 10px; }
+.ob-controls { display: flex; gap: 14px; font-size: 13px; color: var(--text-2); }
+.ob-controls select { font: inherit; color: var(--text); background: var(--page); border: 1px solid var(--line); border-radius: 6px; padding: 3px 6px; margin-left: 4px; }
+.ob-wrap { max-height: 70vh; overflow: auto; margin-top: 8px; }
+table.ob { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 13px; }
+table.ob th { position: sticky; top: 0; background: var(--surface); z-index: 1; color: var(--text-2); font-weight: 500; }
+table.ob td, table.ob th { padding: 3px 8px; text-align: right; white-space: nowrap; }
+table.ob td.l, table.ob th.l { text-align: left; }
+table.ob tr.ask td.p { color: var(--crit); } table.ob tr.bid td.p { color: var(--good); }
+table.ob td.bar { position: relative; width: 30%; min-width: 120px; padding: 0; }
+table.ob td.where { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+.ob-tabs { flex-wrap: wrap; } .ob-tabs button { white-space: nowrap; }
+.legend i.mine-key { background: color-mix(in srgb, var(--accent) 14%, transparent); box-shadow: inset 3px 0 0 var(--accent); }
+table.ob td.bar span { position: absolute; top: 3px; bottom: 3px; opacity: .55; border-radius: 2px; }
+table.ob tr.ask td.bar span { right: 0; } table.ob tr.bid td.bar span { right: 0; }
+table.ob tr.hand td { background: color-mix(in srgb, var(--series-4) 16%, transparent); }
+table.ob tr.hand td:first-child { box-shadow: inset 3px 0 0 var(--series-4); }
+table.ob tr.mine td { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+table.ob tr.mine td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+table.ob .hand-q { font-weight: 600; }
+.legend i.hand-key { background: color-mix(in srgb, var(--series-4) 16%, transparent); box-shadow: inset 3px 0 0 var(--series-4); }
+table.ob tr.mid td { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 6px 8px; color: var(--text-2); text-align: center; }
+table.ob .you { color: var(--accent); font-weight: 600; }
+@media (max-width: 560px) { table.ob .wide { display: none; } table.ob td.bar { width: 22%; min-width: 40px; } table.ob td, table.ob th { padding: 3px 5px; } }
+.checks label { display: flex; align-items: center; gap: 6px; font-size: 13.5px; width: auto; }
+.field .checks input { width: auto; margin: 0; }
+.block-line { border-left: 3px solid var(--crit); padding: 6px 10px; margin: 8px 0; font-size: 13.5px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.btn.stop { border-color: var(--crit); color: var(--crit); }
+.field .hint { font-size: 12.5px; color: var(--text-3); margin-top: 3px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 14px; }
+.btn { font: inherit; font-weight: 600; cursor: pointer; border-radius: 8px; padding: 7px 18px; border: 1px solid var(--line); background: var(--sunken); color: var(--text); }
+.btn.go { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+.btn:disabled { cursor: default; opacity: .45; }
+#mmMsg, .msg-line { font-size: 13px; color: var(--text-2); min-height: 19px; flex-basis: 100%; }
+pre { margin: 0; max-height: 280px; overflow: auto; background: var(--sunken); border-radius: 8px; padding: 10px 12px; font: 12.5px/1.45 ui-monospace, Consolas, monospace; color: var(--text-2); white-space: pre; min-height: 60px; }
+.banner { background: var(--banner); border-radius: 10px; padding: 10px 14px; font-size: 13.5px; }
+.banner ul { margin: 6px 0 0; padding-left: 18px; }
+.status-line { font-weight: 600; font-size: 15px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="mode-bar" id="modeBar" data-go="settings#set-mode" role="link" tabindex="0" hidden><b>Paper mode</b> Nothing reaches a venue: the live desk is off and the paper maker can run. Switch back to live in Settings.</div>
+  <header>
+    <h1 class="brand"><img src="/logo.svg" alt="" width="30" height="30">Minima venues</h1>
+    <div class="pills" id="pills"><span class="pill">Reading venues</span></div>
+  </header>
+  <nav role="tablist">
+    <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
+    <button role="tab" data-tab="books" aria-selected="false">Order books</button>
+    <button role="tab" data-tab="trade" aria-selected="false">Trade</button>
+    <button role="tab" data-tab="maker" aria-selected="false">Market maker</button>
+    <button role="tab" data-tab="connections" aria-selected="false" class="nav-right">Connections</button>
+    <button role="tab" data-tab="settings" aria-selected="false" class="nav-settings">Settings</button>
+    <button role="tab" data-tab="about" aria-selected="false">About</button>
+  </nav>
+
+  <section class="tab on" id="tab-overview">
+    <div class="tiles" id="tiles"></div>
+    <div class="card">
+      <div class="head"><div><h2>Profit and loss</h2><div class="sub" id="pnlSub">Only what this desk trades, from its first trade on. Trades placed by hand or by another bot on the same accounts are left out.</div></div></div>
+      <div class="tiles" id="pnlTiles"></div>
+    </div>
+    <div class="card">
+      <div class="head"><h2>The venues now</h2><span class="sub" id="scanNote"></span></div>
+      <div class="scroll"><table id="venuesTable"></table></div>
+    </div>
+    <div class="card">
+      <div class="head">
+        <div><h2>Mid price by venue</h2><div class="sub">MxUSD per MINIMA</div></div>
+        <div class="seg" id="range">
+          <button data-h="1" aria-pressed="false">1 hour</button><button data-h="24" aria-pressed="true">24 hours</button><button data-h="168" aria-pressed="false">7 days</button>
+        </div>
+      </div>
+      <div class="legend" id="priceLegend"></div>
+      <div class="chart" id="priceChart" style="height:280px"></div>
+      <details><summary>Show the latest scans as a table</summary><div class="scroll"><table id="historyTable"></table></div></details>
+    </div>
+    <div class="two">
+      <div class="card">
+        <div class="head"><div><h2>Profit available per scan</h2><div class="sub">Best route after time risk, MxUSD, if taken once at that moment</div></div></div>
+        <div class="legend"></div>
+        <div class="chart" id="profitChart" style="height:220px"></div>
+        <p class="sub" id="profitNote" style="margin:8px 0 0"></p>
+      </div>
+      <div class="card">
+        <div class="head"><div><h2>Depth around the MEXC price</h2><div class="sub">MINIMA you could trade up to each price</div></div></div>
+        <div class="legend" id="depthLegend"></div>
+        <div class="chart" id="depthChart" style="height:220px"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="head"><div><h2>Routes</h2><div class="sub">Buy on one venue, sell on another, after the pool's 0.5% and an assumed 0.1% at MEXC. Always two separate trades.</div></div><span class="sub" id="timingNote"></span></div>
+      <div class="scroll"><table id="routesTable"></table></div>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-trade">
+    <div class="card ticket">
+      <div class="tk-top">
+        <label class="tk-venue">Venue <select id="t-venue"></select></label>
+        <a class="tk-arm" id="t-arm" href="#" data-go="settings#set-arm"></a>
+      </div>
+      <div class="tk-row">
+        <div class="seg tk-side" id="t-side"><button type="button" data-side="buy">Buy</button><button type="button" data-side="sell">Sell</button></div>
+        <div class="seg" id="t-type"><button type="button" data-type="market">Market</button><button type="button" data-type="limit">Limit</button></div>
+      </div>
+      <div class="form tk-form">
+        <div class="field"><label for="l-limit" id="t-priceLabel">Price, USDT</label><input id="l-limit" inputmode="decimal" spellcheck="false"><div class="hint" id="t-priceHint"></div></div>
+        <div class="field"><label for="l-amount" id="t-amountLabel">Amount, MINIMA</label><input id="l-amount" inputmode="decimal" spellcheck="false"><div class="hint" id="t-avail"></div></div>
+      </div>
+      <div class="tk-pcts" id="t-pcts"><button type="button" class="btn" data-pct="25">25%</button><button type="button" class="btn" data-pct="50">50%</button><button type="button" class="btn" data-pct="75">75%</button><button type="button" class="btn" data-pct="100">Max</button></div>
+      <p class="sub tk-what" id="t-what"></p>
+      <div class="actions">
+        <button class="btn" id="btnPreview" type="button">Preview</button>
+        <button class="btn tk-send" id="btnSend" type="button" disabled>Buy MINIMA</button>
+        <div class="msg-line" id="tradeMsg" role="status"></div>
+      </div>
+      <div class="scroll"><table id="previewTable"></table></div>
+    </div>
+    <div class="card">
+      <div class="head"><h2>Trades</h2><span class="sub">Newest first. Each one is also in the run's RESULTS.md.</span></div>
+      <div class="scroll" style="max-height:420px;overflow-y:auto"><table id="journalTable"></table></div>
+    </div>
+    <div class="card">
+      <div class="head"><div class="status-line" id="liveStatus">Disarmed</div><span class="sub" id="liveLine"></span></div>
+      <div class="tiles" id="liveTiles"></div>
+      <div id="liveBlocks"></div>
+      <p class="sub" style="margin:8px 0 0">Arm, disarm and release blocks in <a href="#" data-go="settings#set-arm">Settings</a>. Caps, take when crossed and the ladder are in the envelope, under <a href="#" data-go="maker:setup">Envelope and ladder</a>.</p>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-maker">
+    <div class="seg mm-tabs" role="tablist" id="mmTabs" aria-label="Market maker views"></div>
+    <div class="mm-pane" data-mm="paper">
+    <div class="banner"><b>Paper maker.</b> A simulation against live prices: no order reaches any venue. Its fills are judged once a minute, against the real MEXC and pool prices.</div>
+    <div class="card">
+      <div class="head"><div class="status-line" id="mmStatus">Stopped</div><span class="sub" id="mmFeed"></span></div>
+      <div class="tiles" id="mmTiles"></div>
+    </div>
+    <div class="card">
+      <div class="head"><div><h2>Run the paper maker</h2><div class="sub">A rehearsal: nothing here reaches a venue. Its ladder, shape and slope are set under <a href="#" data-go="maker:setup">Ladder and timing</a>.</div></div></div>
+      <div class="actions">
+        <button class="btn go" id="btnStart" type="button">Start</button>
+        <button class="btn" id="btnStop" type="button">Stop</button>
+        <button class="btn" id="btnReset" type="button">Start over</button>
+        <div id="mmMsg" role="status"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="head"><h2 id="rungsTitle">Orders it would place</h2></div>
+      <div class="scroll"><table id="rungsTable"></table></div>
+    </div>
+    <div class="two">
+      <div class="card">
+        <div class="head"><div><h2>Result against just holding</h2><div class="sub">MxUSD, marked at the MEXC mid</div></div></div>
+        <div class="legend"></div>
+        <div class="chart" id="edgeChart" style="height:220px"></div>
+      </div>
+      <div class="card">
+        <div class="head"><h2>Paper fills</h2><span class="sub" id="fillsNote"></span></div>
+        <div class="scroll" style="max-height:250px;overflow-y:auto"><table id="fillsTable"></table></div>
+      </div>
+    </div>
+    <p class="sub" style="margin:0">A paper order fills only when a real MEXC or pool price goes through it, for the depth that is there, and the pool can fill it once until its reserves change. Real takers may be slower or never come, so treat this as a rehearsal of the settings, not a forecast.</p>
+    </div>
+    <div class="mm-pane" data-mm="setup">
+    <p class="sub" style="margin:0">Everything that changes what the bot trades: how long trades are waited for, the ladder, and each live run's envelope.</p>
+    <div class="card" id="set-timing">
+      <div class="head"><div><h2>Trade timing</h2><div class="sub" id="timingLine"></div></div></div>
+      <div class="form">
+        <div class="field"><label for="t-poolConfirms">Pool confirmations</label><input id="t-poolConfirms" inputmode="numeric"><div class="hint">Blocks a pool trade is waited for</div></div>
+        <div class="field"><label for="t-fastConfirms">Dexicon confirmations</label><input id="t-fastConfirms" inputmode="numeric"><div class="hint">Blocks a fast fill is waited for</div></div>
+      </div>
+      <div class="actions"><button class="btn" id="btnTiming" type="button">Save timing</button><div class="msg-line" id="timingMsg" role="status"></div></div>
+    </div>
+    <div class="card" id="set-maker">
+      <div class="head"><div><h2>Market maker ladder</h2><div class="sub">Dexicon's ladder, pegged to the MEXC mid. Used by the paper maker now, and kept with each run's envelope for live quoting. Applied at once when saved.</div></div></div>
+      <form id="mmForm" class="form" novalidate autocomplete="off"></form>
+      <div class="actions">
+        <button class="btn" id="btnSave" type="button">Save ladder</button>
+        <div class="msg-line" id="mmSetMsg" role="status"></div>
+      </div>
+    </div>
+    <div class="card" id="set-envelope">
+      <div class="head"><div><h2>Live trading envelope</h2><div class="sub">Written to evidence/&lt;date&gt;-&lt;run&gt;/ENVELOPE.md before any trade. Fixed once written: new caps need a new run.</div></div></div>
+      <form id="envForm" class="form" novalidate autocomplete="off"></form>
+      <div class="field" style="margin-top:10px"><label>Actions allowed</label><div id="envActions" class="checks"></div></div>
+      <h3 class="subhead">Take when crossed</h3>
+      <p class="sub" style="margin:0 0 8px">When on, after each scan the desk sends an allowed route by itself if its edge after fees clears both thresholds. Sizes up to the caps above; every cap and stop still applies.</p>
+      <div class="checks" style="margin-bottom:8px"><label><input type="checkbox" id="e-autoTake">Take when the venues cross</label></div>
+      <div class="form" id="envAutoForm"></div>
+      <h3 class="subhead">Taker</h3>
+      <p class="sub" style="margin:0 0 8px">When on, while armed, after each scan the desk takes by itself the levels of one exchange book that pass all three tests: the price limit, the smallest level size, and the distance from the other side's best price. One immediate-or-cancel order at a time, within the size caps.</p>
+      <div class="checks" style="margin-bottom:8px"><label><input type="checkbox" id="e-takerOn">Take levels that pass the rule</label></div>
+      <div class="form">
+        <div class="field"><label for="e-takerVenue">Venue</label><select id="e-takerVenue"><option value="mexc">MEXC</option><option value="xt">XT.com</option></select></div>
+        <div class="field"><label for="e-takerSide">Side</label><select id="e-takerSide"><option value="buy">Buy: take asks</option><option value="sell">Sell: hit bids</option></select></div>
+        <div class="field"><label for="e-takerLimit">Price limit</label><input id="e-takerLimit" value="0.003" spellcheck="false"><div class="hint">Asks at or under it (buy), bids at or over it (sell)</div></div>
+        <div class="field"><label for="e-takerMinSize">Smallest level, MINIMA</label><input id="e-takerMinSize" value="5000" spellcheck="false"><div class="hint">Only levels at least this big count</div></div>
+        <div class="field"><label for="e-takerMaxGap">Distance from the other side</label><input id="e-takerMaxGap" value="0.0002" spellcheck="false"><div class="hint">From the best bid (buy) or best ask (sell)</div></div>
+        <div class="field"><label for="e-takerCooldown">Wait between takes, s</label><input id="e-takerCooldown" value="300" spellcheck="false"><div class="hint">60 or more</div></div>
+      </div>
+      <h3 class="subhead">Resting orders</h3>
+      <p class="sub" style="margin:0 0 8px">The shape and slope of the ladder, kept with the run. This version places no resting orders yet; the Paper maker shows the same ladder on paper.</p>
+      <div class="form" id="envLadderForm"></div>
+      <div class="actions">
+        <button class="btn" id="btnEnvelope" type="button">Write envelope</button>
+        <div class="msg-line" id="envMsg" role="status"></div>
+      </div>
+    </div>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-books">
+    <div class="card">
+      <div class="head ob-head">
+        <div class="seg ob-tabs" role="tablist" id="obTabs" aria-label="Order book views"></div>
+        <div class="ob-controls">
+          <label>Group <select id="obGroup"><option value="0.000001">0.000001</option><option value="0.000005">0.000005</option><option value="0.00001" selected>0.00001</option><option value="0.00005">0.00005</option></select></label>
+          <label>Rows <select id="obRows"><option>10</option><option selected>20</option><option>40</option></select></label>
+        </div>
+      </div>
+      <div class="sub" id="obLine"></div>
+      <div class="legend" id="obLegend"></div>
+      <div class="ob-wrap"><table class="ob" id="obTable"></table></div>
+      <p class="sub" style="margin:10px 0 0">Keys 1 to 6 switch views, or the left and right arrows. Books are read once a minute with each scan, within 15% of the MEXC mid. The pools have no orders: their curve is shown as the levels a trade would get.</p>
+    </div>
+    <div class="ob-detail" data-ob-for="FAST">
+    <div class="card">
+      <div class="head"><h2>Dexicon fast orders</h2><span class="sub" id="fastNote"></span></div>
+      <p class="src">From the relays' public book, <code>GET /dex/book?market=MINIMA/MxUSD</code>. Each order's signature is checked and its coins are looked up on the node, so a listed size is what those coins can really pay.</p>
+      <div class="two">
+        <div><h2 style="margin-bottom:6px">Bids</h2><div class="scroll"><table id="fastBids"></table></div></div>
+        <div><h2 style="margin-bottom:6px">Asks</h2><div class="scroll"><table id="fastAsks"></table></div></div>
+      </div>
+    </div>
+    </div>
+    <div class="ob-detail" data-ob-for="POOL">
+    <div class="tiles" id="poolTiles"></div>
+    <div class="card">
+      <div class="head"><h2>Live MxUSD pools</h2><span class="sub" id="poolNote"></span></div>
+      <p class="src">From the node. Beacons at <code>0x50414E4441504F4F4C53</code> name each pool, its address is derived again with <code>runscript</code> rather than trusted, then <code>coins address:</code> gives the two reserve coins.</p>
+      <div class="scroll"><table id="poolsTable"></table></div>
+    </div>
+    <div class="card">
+      <div class="head"><div><h2>What a swap would pay now</h2><div class="sub">Split across pools, after the 0.5% fee</div></div></div>
+      <div class="scroll"><table id="quotesTable"></table></div>
+    </div>
+    </div>
+    <div class="ob-detail" data-ob-for="BOOK">
+    <div class="card">
+      <div class="head"><h2>PandaDEX, the on-chain book</h2><span class="sub" id="bookNote"></span></div>
+      <p class="src">From the node, <code>coins address:</code> on the two covenant addresses. Dexicon shows these orders in its ladder too. Orders within 30 blocks of expiry are left out.</p>
+      <div class="two">
+        <div><h2 style="margin-bottom:6px">Bids</h2><div class="scroll"><table id="bookBids"></table></div></div>
+        <div><h2 style="margin-bottom:6px">Asks</h2><div class="scroll"><table id="bookAsks"></table></div></div>
+      </div>
+    </div>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-about">
+    <div class="card about">
+      <div class="about-head"><img src="/logo.svg" alt="" width="56" height="56"><div><h2>Minima venues</h2><div class="sub">Beta. An initiative from <a href="https://0xhorizon.xyz" target="_blank" rel="noopener">0xhorizon.xyz</a></div></div></div>
+      <h3 class="subhead">Disclaimer</h3>
+      <p>Experimental software, provided as it is, without warranty of any kind. It has not been audited. Trading can lose money, quickly; prices, venues and exchanges can fail, change or stop without notice; a trade with two legs can end with one done and not the other. Nothing here is financial advice. You alone are responsible for your keys, your funds and every trade you send. PandaPools' pricing files are used unedited under the MIT licence; Dexicon, PandaPools, PandaDEX, MEXC and XT.com are run by others and are not part of this initiative.</p>
+      <h3 class="subhead">What it is</h3>
+      <p>One place to see and trade MINIMA wherever it trades: Dexicon's fast orders, PandaPools, the PandaDEX on-chain book, MEXC and XT.com. It shows every order book side by side, finds where the venues' prices cross, rehearses a market maker on paper, and places real trades, one press at a time, inside limits you write down first.</p>
+      <p>It is made for people who already run their own Minima node and know how exchange API keys work. It runs on your own computer and talks only to your node and to the venues.</p>
+
+      <h3 class="subhead">How to use it</h3>
+      <ol>
+        <li><b>Connections.</b> Start your bot node (its own wallet, funded only with what it may lose) and let it reach the chain tip. Connect the MEXC and XT.com keys you want to use. The Dexicon relays are set already.</li>
+        <li><b>Settings, Mode.</b> Paper to rehearse: the paper maker trades against real prices, nothing reaches a venue. Live to trade for real.</li>
+        <li><b>Market maker, Envelope and ladder.</b> In live mode, write an envelope: what may be traded, the size per trade, trades a day, the loss cap. It cannot be changed once written; new limits mean a new run.</li>
+        <li><b>Settings, Live desk.</b> Arm the desk. It is always disarmed after a restart.</li>
+        <li><b>Trade.</b> Pick a venue, Buy or Sell, Market or Limit, preview, then send. Each send is one real trade.</li>
+        <li><b>Order books and Overview.</b> Follow the venues, the routes between them, your orders ("By hand" or "App") and the desk's result.</li>
+      </ol>
+      <p class="sub">Turn the <b>?</b> marks on or off in Settings, Appearance: each explains the setting beside it.</p>
+
+      <h3 class="subhead">Safety</h3>
+      <ul>
+        <li><b>Exchange keys:</b> give them reading and spot trading only, never withdrawal or transfer, and limit them to your computer's IP address. They are stored encrypted for your Windows user, outside the app's folder, and never shown again. Never paste a secret anywhere else.</li>
+        <li><b>The bot's wallet:</b> its own node and wallet, never your main one. Fund it only with what you can afford to lose, and back up its seed from the node's own terminal before funding it. This app never reads the seed.</li>
+        <li><b>Limits:</b> every real trade happens inside the envelope's caps. The desk stops itself on any unclear outcome, on a half-done route, on the loss cap, or after a restart, and waits for you to look and release it.</li>
+        <li><b>Nothing trades on its own</b> unless you turn on "take when crossed" or a taker rule in an envelope and arm the desk, in live mode.</li>
+        <li><b>Check every trade</b> where it happened, on the exchange or on chain, not only here.</li>
+        <li><b>Keep it local:</b> the app listens on this computer only. Do not expose it to a network.</li>
+      </ul>
+
+      <h3 class="subhead">Open source</h3>
+      <p>Free and open under the MIT licence: use it, change it, share it. The code is at <a href="https://github.com/Charles0xhorizonxyz/minima-venues" target="_blank" rel="noopener">github.com/Charles0xhorizonxyz/minima-venues</a>. Problems and ideas are welcome there.</p>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-settings">
+    <div class="card set-index">
+      <b>Mode</b> <a href="#set-mode">Live or paper</a>
+      <span class="sep"></span>
+      <b>Look</b> <a href="#set-look">Appearance</a>
+      <span class="sep"></span>
+      <b>Live desk</b> <a href="#set-arm">Arm or disarm</a>
+    </div>
+    <div class="card" id="set-mode">
+      <div class="head"><div><h2>Mode</h2><div class="sub">The whole app runs in one mode or the other.</div></div></div>
+      <div class="mode-opts">
+        <button type="button" class="mode-opt" data-mode-pick="live"><span class="t">Live</span><span class="d">The live desk and real trades, inside an envelope. The paper maker is off.</span></button>
+        <button type="button" class="mode-opt" data-mode-pick="paper"><span class="t">Paper</span><span class="d">A rehearsal: the paper maker runs against live prices, the live desk is disarmed and cannot send anything.</span></button>
+      </div>
+      <div class="msg-line" id="modeMsg" role="status"></div>
+    </div>
+    <div class="card" id="set-look">
+      <div class="head"><div><h2>Appearance</h2><div class="sub">Colours for this page, remembered in this browser.</div></div></div>
+      <div class="themes" id="themes"></div>
+      <div class="checks" style="margin-top:12px"><label><input type="checkbox" id="helpOn">Show the <span class="help-dot">?</span> explanations beside settings</label></div>
+    </div>
+    <div class="card" id="set-arm">
+      <div class="head"><div><h2>Live desk</h2><div class="sub" id="armLine"></div></div></div>
+      <div class="banner" id="liveBanner"></div>
+      <div id="armBlocks"></div>
+      <div class="actions">
+        <button class="btn go" id="btnArm" type="button">Arm</button>
+        <button class="btn" id="btnDisarm" type="button">Disarm</button>
+        <div class="msg-line" id="armMsg" role="status"></div>
+      </div>
+      <p class="sub" style="margin:8px 0 0">The envelope (caps, routes, take when crossed) is written under <a href="#" data-go="maker:setup">Market maker, Envelope and ladder</a>.</p>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-connections">
+    <div class="card set-index">
+      <b>Connections</b> <a href="#set-node">Bot node</a> <a href="#set-mexc">MEXC</a> <a href="#set-xt">XT.com</a> <a href="#set-relays">Dexicon relays</a>
+    </div>
+    <div class="card" id="set-node">
+      <div class="head"><div class="status-line" id="nodeStatus">Stopped</div><span class="sub" id="nodeLine"></span></div>
+      <div class="tiles" id="nodeTiles"></div>
+      <div class="actions">
+        <button class="btn go" id="btnNodeStart" type="button">Start node</button>
+        <button class="btn" id="btnNodeStop" type="button">Stop node</button>
+        <div class="msg-line" id="nodeMsg" role="status"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="head"><div><h2>Bot node settings</h2><div class="sub">The bot's own node and wallet. Its command port is the node port plus 4.</div></div></div>
+      <form id="nodeForm" class="form stack" novalidate autocomplete="off"></form>
+      <div class="actions">
+        <button class="btn" id="btnNodeSave" type="button">Save node settings</button>
+        <div class="msg-line" id="nodeSetMsg" role="status"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="head"><div><h2>Add a peer</h2><div class="sub">If the node is stuck behind the chain</div></div></div>
+      <div class="form"><div class="field"><label for="n-peer">Peer, host:port</label><input id="n-peer" spellcheck="false" placeholder="megammr.minima.global:9001"></div></div>
+      <div class="actions"><button class="btn" id="btnPeer" type="button">Connect peer</button><div class="msg-line" id="peerMsg" role="status"></div></div>
+    </div>
+    <div class="card" id="set-resync">
+      <div class="head"><div><h2>Resync from a MegaMMR node</h2><div class="sub">If the node is far behind or on the wrong chain. The wallet stays as it is.</div></div></div>
+      <div class="form">
+        <div class="field"><label for="n-mmrPick">MegaMMR node</label><select id="n-mmrPick"></select></div>
+        <div class="field"><label for="n-mmrHost">Host, host:port</label><input id="n-mmrHost" spellcheck="false" placeholder="megammr.minima.global:9001"></div>
+      </div>
+      <div class="actions"><button class="btn" id="btnResync" type="button">Resync now</button><div class="msg-line" id="resyncMsg" role="status"></div></div>
+    </div>
+    <div class="card">
+      <div class="head"><h2>Node log</h2><span class="sub">Latest lines</span></div>
+      <pre id="nodeLog"></pre>
+    </div>
+    <div class="card" id="set-mexc">
+      <div class="head"><div><h2>MEXC key</h2><div class="sub" id="mexcLine">Not connected</div></div></div>
+      <p class="src">A key with spot trading and reading, no withdrawal, limited to this computer's IP address. Your secret is encrypted for your Windows user, kept outside Documents, and never shown again.</p>
+      <div class="form stack" id="mexcForm">
+        <div class="field"><label for="m-apiKey">API key</label><input id="m-apiKey" autocomplete="off" spellcheck="false"></div>
+        <div class="field"><label for="m-apiSecret">API secret</label><input id="m-apiSecret" type="password" autocomplete="new-password" spellcheck="false"></div>
+      </div>
+      <div class="actions">
+        <button class="btn go" id="btnMexcConnect" type="button">Connect</button>
+        <button class="btn" id="btnMexcOff" type="button">Disconnect</button>
+        <div class="msg-line" id="mexcMsg" role="status"></div>
+      </div>
+    </div>
+    <div id="ex-mexc"></div>
+    <div class="card" id="set-xt">
+      <div class="head"><div><h2>XT.com key</h2><div class="sub" id="xtLine">Not connected</div></div></div>
+      <p class="src">On XT, create a key with spot trading and reading, no withdrawal and no transfer, limited to this computer's public IP address. Paste it here only. The secret is encrypted for your Windows user and never shown again. Note: XT's public data for MINIMA/USDT says API trading is not enabled for this pair; the first order will tell. XT charges 0.2%.</p>
+      <div class="form stack">
+        <div class="field"><label for="x-apiKey">API key</label><input id="x-apiKey" autocomplete="off" spellcheck="false"></div>
+        <div class="field"><label for="x-apiSecret">API secret</label><input id="x-apiSecret" type="password" autocomplete="new-password" spellcheck="false"></div>
+      </div>
+      <div class="actions">
+        <button class="btn go" id="btnXtConnect" type="button">Connect</button>
+        <button class="btn" id="btnXtOff" type="button">Disconnect</button>
+        <div class="msg-line" id="xtMsg" role="status"></div>
+      </div>
+    </div>
+    <div id="ex-xt"></div>
+    <div class="card" id="set-relays">
+      <div class="head"><div><h2>Dexicon relays</h2><div class="sub">Where the fast orders are read. Every order is checked anyway (signature, coins on the node), so a bad relay can hide orders but not fake one.</div></div></div>
+      <div class="form stack"><div class="field"><label for="r-relays">Relays, one per line</label><textarea id="r-relays" rows="4" spellcheck="false"></textarea><div class="hint">https addresses, at most 6. Any relay lists the others at /dex/relays.</div></div></div>
+      <div class="actions">
+        <button class="btn" id="btnRelays" type="button">Save relays</button>
+        <div class="msg-line" id="relaysMsg" role="status"></div>
+      </div>
+      <h3 class="subhead">At the last scan</h3>
+      <div class="scroll"><table id="relaysTable"></table></div>
+    </div>
+  </section>
+</div>
+
+<script>
+'use strict';
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const NAMES = { FAST: 'Dexicon fast orders', BOOK: 'PandaDEX', POOL: 'PandaPools', MEXC: 'MEXC', XT: 'XT.com' };
+const COLOR = { FAST: 'var(--series-1)', POOL: 'var(--series-2)', MEXC: 'var(--series-3)', BOOK: 'var(--series-4)', XT: 'var(--series-5)' };
+const SOURCE = {
+  FAST: 'Dexicon relays, public HTTP, coins checked on the node',
+  BOOK: 'Minima node, coins at the covenant addresses',
+  XT: 'XT.com public depth API',
+  POOL: 'Minima node, registry beacons and reserve coins',
+  MEXC: 'MEXC public depth API',
+};
+const px = (x) => (x === null || x === undefined ? '-' : x.toFixed(8));
+const px5 = (x) => (x === null || x === undefined ? '-' : x.toFixed(5));
+const int = (x) => (x === null || x === undefined ? '-' : Math.round(x).toLocaleString('en-US'));
+const usd = (x, d = 2) => (x === null || x === undefined ? '-' : x.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }));
+const signed = (x, d = 2) => (x === null || x === undefined ? '-' : (x > 0 ? '+' : '') + usd(x, d));
+const pct = (x, d = 2) => (x === null || x === undefined ? '-' : (x > 0 ? '+' : '') + x.toFixed(d) + '%');
+const mid = (v) => (v && v.bid && v.ask ? (v.bid + v.ask) / 2 : null);
+const ago = (s) => (s < 90 ? `${Math.round(s)} s` : s < 5400 ? `${Math.round(s / 60)} min` : `${(s / 3600).toFixed(1)} h`);
+const clock = (t, long) => new Date(t).toLocaleString('en-GB', long ? { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' } : { hour: '2-digit', minute: '2-digit' });
+
+let state = null, history = [], rangeHours = 24, lastScanAt = null, formFilled = false;
+
+/* One line chart for all four figures. Crosshair and tooltip on hover; a line breaks at a null value. */
+function lineChart(host, o) {
+  const W = Math.max(260, host.clientWidth), H = host.clientHeight;
+  const series = o.series.filter((s) => s.points.some((p) => p[1] !== null));
+  const all = series.flatMap((s) => s.points.filter((p) => p[1] !== null));
+  if (new Set(all.map((p) => p[0])).size < 2) {
+    host.innerHTML = `<div class="msg">${esc(o.empty)}</div>`;
+    host.onpointermove = host.onpointerleave = null;
+    return;
+  }
+  const direct = o.direct && W > 460 && series.length > 1;
+  const m = { l: o.yWidth ?? 66, r: direct ? 66 : 12, t: 10, b: 24 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  let x0 = o.xDomain ? o.xDomain[0] : Math.min(...all.map((p) => p[0]));
+  let x1 = o.xDomain ? o.xDomain[1] : Math.max(...all.map((p) => p[0]));
+  if (x1 === x0) { x0 -= 1; x1 += 1; }
+  let y0 = Math.min(...all.map((p) => p[1])), y1 = Math.max(...all.map((p) => p[1]));
+  if (o.zero) { y0 = Math.min(0, y0); y1 = Math.max(0, y1); }
+  if (y1 === y0) { y1 += Math.abs(y1) * 0.01 || 1; y0 -= o.zero ? 0 : Math.abs(y0) * 0.01 || 1; }
+  const pad = (y1 - y0) * 0.08; y1 += pad; if (!o.zero || y0 < 0) y0 -= pad;
+  const X = (v) => m.l + ((v - x0) / (x1 - x0)) * iw, Y = (v) => m.t + (1 - (v - y0) / (y1 - y0)) * ih;
+
+  let g = '';
+  for (let i = 0; i <= 4; i++) {
+    const v = y0 + ((y1 - y0) * i) / 4, y = Y(v);
+    g += `<line x1="${m.l}" x2="${W - m.r}" y1="${y}" y2="${y}" stroke="var(--grid)"/>`;
+    g += `<text x="${m.l - 8}" y="${y + 4}" text-anchor="end" fill="var(--text-3)" font-size="12">${esc(o.yFmt(v))}</text>`;
+  }
+  const ticks = W < 460 ? 2 : 4;
+  for (let i = 0; i <= ticks; i++) {
+    const v = x0 + ((x1 - x0) * i) / ticks, anchor = i === 0 ? 'start' : i === ticks ? 'end' : 'middle';
+    g += `<text x="${X(v)}" y="${H - 6}" text-anchor="${anchor}" fill="var(--text-3)" font-size="12">${esc(o.xFmt(v, x1 - x0))}</text>`;
+  }
+  if (o.zero && y0 < 0) g += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--text-3)"/>`;
+  if (o.mark !== undefined) g += `<line x1="${X(o.mark)}" x2="${X(o.mark)}" y1="${m.t}" y2="${m.t + ih}" stroke="var(--text-3)" stroke-dasharray="3 3"/>`;
+
+  const inside = (p) => p[0] >= x0 && p[0] <= x1;
+  let lines = '';
+  for (const s of series) {
+    let d = '', pen = false, prev = null;
+    for (const p of s.points) {
+      if (p[1] === null || !inside(p)) { pen = false; prev = null; continue; }
+      const px_ = X(p[0]).toFixed(1), py_ = Y(p[1]).toFixed(1);
+      if (!pen) d += `M${px_} ${py_}`; else d += o.step ? `H${px_}V${py_}` : `L${px_} ${py_}`;
+      pen = true; prev = p;
+    }
+    lines += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  }
+  // Direct labels at each line's end, pushed apart where they would touch.
+  if (direct) {
+    const ends = series.map((s) => { const p = s.points.filter((q) => q[1] !== null && inside(q)).at(-1); return p && { name: s.short ?? s.name, y: Y(p[1]) + 4, x: X(p[0]) }; }).filter(Boolean).sort((a, b) => a.y - b.y);
+    for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 14) ends[i].y = ends[i - 1].y + 14;
+    for (const e of ends) lines += `<text x="${W - m.r + 6}" y="${e.y}" fill="var(--text-2)" font-size="12">${esc(e.name)}</text>`;
+  }
+  host.innerHTML = `<svg width="${W}" height="${H}" role="img" aria-label="${esc(o.label)}">${g}${lines}<g class="cross"></g></svg><div class="tip"></div>`;
+
+  const cross = host.querySelector('.cross'), tip = host.querySelector('.tip');
+  host.onpointermove = (ev) => {
+    const rect = host.getBoundingClientRect(), mx = ev.clientX - rect.left;
+    const xv = x0 + ((Math.min(W - m.r, Math.max(m.l, mx)) - m.l) / iw) * (x1 - x0);
+    const rows = series.map((s) => {
+      let best = null, gap = Infinity;
+      for (const p of s.points) { if (p[1] === null || !inside(p)) continue; const d = Math.abs(p[0] - xv); if (d < gap) { gap = d; best = p; } }
+      return best && { s, p: best };
+    }).filter(Boolean);
+    if (!rows.length) return;
+    const lead = rows.reduce((a, b) => (Math.abs(b.p[0] - xv) < Math.abs(a.p[0] - xv) ? b : a));
+    const cx = o.step ? X(xv) : X(lead.p[0]);
+    let c = `<line x1="${cx}" x2="${cx}" y1="${m.t}" y2="${m.t + ih}" stroke="var(--text-3)"/>`;
+    if (!o.step) for (const r of rows) if (r.p[0] === lead.p[0]) c += `<circle cx="${X(r.p[0])}" cy="${Y(r.p[1])}" r="4.5" fill="${r.s.color}" stroke="var(--surface)" stroke-width="2"/>`;
+    cross.innerHTML = c;
+    tip.innerHTML = `<div class="t">${esc(o.tipX(o.step ? xv : lead.p[0]))}</div>` + rows.filter((r) => o.step || r.p[0] === lead.p[0]).map((r) =>
+      `<div class="row"><span>${series.length > 1 ? `<i style="background:${r.s.color}"></i>` : ''}${esc(r.s.name)}</span><b>${esc(o.tipY(r.p[1]))}</b></div>`).join('');
+    tip.style.display = 'block';
+    const tw = tip.offsetWidth, left = cx + 14 + tw > W ? cx - 14 - tw : cx + 14;
+    tip.style.left = Math.max(0, left) + 'px'; tip.style.top = m.t + 'px';
+  };
+  host.onpointerleave = () => { cross.innerHTML = ''; tip.style.display = 'none'; };
+}
+
+function legend(el, keys) {
+  el.innerHTML = keys.map((k) => `<span><i style="background:${COLOR[k]}"></i>${esc(NAMES[k])}</span>`).join('');
+}
+
+function thin(rows, max) {
+  if (rows.length <= max) return rows;
+  const every = rows.length / max, out = [];
+  for (let i = 0; i < max; i++) out.push(rows[Math.floor(i * every)]);
+  out.push(rows[rows.length - 1]);
+  return out;
+}
+
+function drawHistory() {
+  const cutoff = Date.now() - rangeHours * 3600000;
+  const rows = history.filter((r) => r.t >= cutoff), few = thin(rows, 700);
+  const m = (r, k) => { const v = r.v[k]; return v && v[0] && v[1] ? (v[0] + v[1]) / 2 : null; };
+  const keys = ['FAST', 'POOL', 'MEXC', 'BOOK', 'XT'].filter((k) => rows.some((r) => m(r, k) !== null));
+  legend($('priceLegend'), keys);
+  const timeX = (v, span) => (span < 600000 ? new Date(v).toLocaleTimeString('en-GB') : clock(v, span > 86400000));
+  lineChart($('priceChart'), {
+    series: keys.map((k) => ({ name: NAMES[k], short: k === 'FAST' ? 'Dexicon' : k === 'POOL' ? 'Pools' : k === 'BOOK' ? 'PandaDEX' : k === 'XT' ? 'XT' : 'MEXC', color: COLOR[k], points: few.map((r) => [r.t, m(r, k)]) })),
+    xFmt: timeX, yFmt: px5, tipX: (v) => clock(v, true), tipY: px, direct: true, label: 'Mid price by venue over time', yWidth: 62,
+    empty: 'The line starts after the second scan, about a minute from the first.',
+  });
+  lineChart($('profitChart'), {
+    series: [{ name: 'Best route', color: COLOR.FAST, points: few.map((r) => [r.t, r.bestAfter ?? r.best]) }],
+    xFmt: timeX, yFmt: (v) => usd(v), tipX: (v) => clock(v, true), tipY: (v) => usd(v, 4) + ' MxUSD', zero: true, label: 'Best route profit per scan', yWidth: 44,
+    empty: 'The line starts after the second scan.',
+  });
+  const paying = rows.filter((r) => (r.bestAfter ?? r.best) > 0);
+  const sorted = paying.map((r) => r.bestAfter ?? r.best).sort((a, b) => a - b);
+  $('profitNote').textContent = rows.length
+    ? `${int(paying.length)} of ${int(rows.length)} scans had a paying route${sorted.length ? `, typically ${usd(sorted[Math.floor(sorted.length / 2)], 2)} MxUSD` : ''}. A gap that stays open is counted once per scan, so this is not a total you could earn.`
+    : '';
+  const last = rows.slice(-30).reverse();
+  $('historyTable').innerHTML = `<tr><th>Time</th>${['FAST', 'POOL', 'MEXC', 'XT'].map((k) => `<th>${NAMES[k]}</th>`).join('')}<th>Best route</th></tr>` +
+    last.map((r) => `<tr><td>${clock(r.t, true)}</td>${['FAST', 'POOL', 'MEXC', 'XT'].map((k) => `<td>${px(m(r, k))}</td>`).join('')}<td>${usd(r.best, 4)}</td></tr>`).join('');
+}
+
+function drawDepth(s) {
+  const center = mid(s.venues.MEXC), host = $('depthChart');
+  if (!center) { legend($('depthLegend'), []); return lineChart(host, { series: [], empty: 'Waiting for the MEXC price.' }); }
+  const lo = center * 0.94, hi = center * 1.06;
+  const line = (b) => {
+    const walk = (rows, dir) => {
+      let c = 0;
+      const sorted = [...rows].sort((p, q) => dir * (p.price - q.price)).filter((r) => r.price >= lo && r.price <= hi);
+      if (!sorted.length) return [];
+      const pts = [[sorted[0].price, 0]];
+      for (const r of sorted) { c += r.qty; pts.push([r.price, c]); }
+      return pts;
+    };
+    return [...walk(b.bids, -1).reverse(), [center, null], ...walk(b.asks, 1)];
+  };
+  const keys = ['FAST', 'POOL', 'MEXC', 'BOOK', 'XT'].filter((k) => s.books[k] && (s.books[k].asks.length || s.books[k].bids.length));
+  legend($('depthLegend'), keys);
+  lineChart(host, {
+    series: keys.map((k) => ({ name: NAMES[k], short: k === 'FAST' ? 'Dexicon' : k === 'POOL' ? 'Pools' : k === 'BOOK' ? 'PandaDEX' : k === 'XT' ? 'XT' : 'MEXC', color: COLOR[k], points: line(s.books[k]) })),
+    xDomain: [lo, hi], mark: center, step: true, zero: true, xFmt: px5, yFmt: (v) => (v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : v >= 1e3 ? Math.round(v / 1e3) + 'K' : int(v)), tipX: (v) => 'At ' + px5(v), tipY: (v) => int(v) + ' MINIMA', label: 'Depth by venue around the MEXC price', yWidth: 46, direct: false,
+    empty: 'No depth within 6% of the MEXC price.',
+  });
+}
+
+function orderTable(el, rows, desc, withMaker) {
+  const sorted = [...rows].sort((a, b) => (desc ? b.price - a.price : a.price - b.price));
+  if (!sorted.length) { el.innerHTML = '<tr><td class="empty left">None resting now.</td></tr>'; return; }
+  let c = 0;
+  el.innerHTML = `<tr><th>Price</th><th>MINIMA</th><th>Total</th>${withMaker ? '<th>Maker</th>' : ''}</tr>` + sorted.map((r) => {
+    c += r.qty;
+    return `<tr><td>${px(r.price)}</td><td>${int(r.qty)}</td><td>${int(c)}</td>${withMaker ? `<td><code>${esc(r.maker)}</code></td>` : ''}</tr>`;
+  }).join('');
+}
+
+function walkQuote(rows, size, desc) {
+  const sorted = [...rows].sort((a, b) => (desc ? b.price - a.price : a.price - b.price));
+  let left = size, cost = 0;
+  for (const r of sorted) { const q = Math.min(left, r.qty); cost += q * r.price; left -= q; if (left <= 1e-9) break; }
+  return left > 1e-9 ? null : cost / size;
+}
+
+function drawSnapshot() {
+  const s = state.snapshot; if (!s) return;
+  const v = s.venues, ref = mid(v.MEXC);
+  const vsRef = (k) => (mid(v[k]) && ref ? (mid(v[k]) / ref - 1) * 100 : null);
+  const best = s.routes.reduce((a, r) => (r.profit > (a ? a.profit : 0) ? r : a), null);
+  const tile = (label, value, note) => `<div class="card tile"><div class="label">${esc(label)}</div><div class="value">${esc(value)}</div><div class="note">${esc(note)}</div></div>`;
+  $('tiles').innerHTML =
+    tile('MEXC mid', px5(ref), 'MxUSD per MINIMA') +
+    tile('PandaPools against MEXC', pct(vsRef('POOL')), `Mid ${px5(mid(v.POOL))}`) +
+    tile('Dexicon against MEXC', pct(vsRef('FAST')), `Mid ${px5(mid(v.FAST))}`) +
+    tile('Best route now, MxUSD', best ? signed(best.afterRisk) + ' after risk' : 'None paying', best ? `Buy ${NAMES[best.buy]}, sell ${NAMES[best.sell]}, about ${ago(best.seconds)}` : 'Every route loses after fees');
+
+  $('venuesTable').innerHTML = `<tr><th>Venue</th><th>Best bid</th><th>Best ask</th><th>Spread</th><th>Against MEXC</th><th>MINIMA within 2%, bid / ask</th><th class="left">Comes from</th></tr>` +
+    ['FAST', 'POOL', 'BOOK', 'MEXC', 'XT'].filter((k) => s.venues[k]).map((k) => {
+      const q = v[k], spread = q.bid && q.ask ? ((q.ask - q.bid) / q.bid) * 100 : null;
+      return `<tr><td>${esc(NAMES[k])}</td><td>${px(q.bid)}</td><td>${px(q.ask)}</td><td>${spread === null ? '-' : spread.toFixed(2) + '%'}</td><td>${k === 'MEXC' ? '-' : pct(vsRef(k))}</td><td>${int(q.bidDepth2pct)} / ${int(q.askDepth2pct)}</td><td class="left muted">${esc(SOURCE[k])}</td></tr>`;
+    }).join('');
+
+  const shown = s.routes.filter((r) => r.bestGapPct !== null).sort((a, b) => b.profit - a.profit || b.bestGapPct - a.bestGapPct);
+  $('routesTable').innerHTML = `<tr><th>Buy on</th><th class="left">Sell on</th><th>Edge at the top</th><th>MINIMA</th><th>Profit, MxUSD</th><th>Takes about</th><th>Time risk</th><th>After risk</th><th class="left">Settles</th></tr>` +
+    (shown.length ? shown.map((r) => `<tr class="${r.profit > 0 ? '' : 'muted'}"><td>${esc(NAMES[r.buy])}</td><td class="left">${esc(NAMES[r.sell])}</td><td>${pct(r.bestGapPct)}</td><td>${int(r.qty)}</td><td>${usd(r.profit, 4)}</td><td>${ago(r.seconds)}</td><td>${usd(r.risk, 4)}</td><td>${signed(r.afterRisk, 4)}</td><td class="left">${r.onChain ? 'Two on-chain trades' : 'One on chain, one at MEXC'}</td></tr>`).join('') : '<tr><td class="empty left">No routes to compare yet.</td></tr>');
+
+  const tm = s.timing;
+  $('timingNote').textContent = `Block about every ${Math.round(tm.blockSeconds)} s. A pool trade takes about ${ago(tm.poolSeconds)} to confirm.`;
+  const f = s.detail.fast;
+  $('fastNote').textContent = `${f.heard} orders, ${f.makers} maker${f.makers === 1 ? '' : 's'}${f.stale ? `, ${f.stale} stale` : ''}${f.badSignature ? `, ${f.badSignature} bad` : ''}${f.unbacked ? `, ${f.unbacked} unbacked` : ''}`;
+  orderTable($('fastBids'), s.books.FAST.bids, true, true);
+  orderTable($('fastAsks'), s.books.FAST.asks, false, true);
+  $('relaysTable').innerHTML = `<tr><th>Relay</th><th>Status</th><th>Orders listed</th></tr>` + f.relays.map((r) =>
+    `<tr><td><code>${esc(r.url)}</code></td><td class="${r.ok ? 'good' : 'crit'}">${r.ok ? '&#10003; Answering' : '&#10005; ' + esc(r.error)}</td><td>${r.ok ? int(r.orders) : '-'}</td></tr>`).join('');
+  $('bookNote').textContent = `${s.detail.book.coins} coins read`;
+  orderTable($('bookBids'), s.books.BOOK.bids, true, false);
+  orderTable($('bookAsks'), s.books.BOOK.asks, false, false);
+
+  const pools = s.detail.pools.list;
+  const sum = (key) => pools.reduce((a, p) => a + p[key], 0);
+  $('poolTiles').innerHTML =
+    tile('Live pools', int(pools.length), `From ${s.detail.pools.beacons} beacons`) +
+    tile('MINIMA in pools', int(sum('x')), 'Both pools together') +
+    tile('MxUSD in pools', usd(sum('y'), 0), 'Both pools together') +
+    tile('Swap fee', '0.5%', 'Stays in the pool');
+  $('poolTiles').querySelectorAll('.note')[1].textContent = pools.length === 1 ? 'The one pool' : 'All pools together';
+  $('poolTiles').querySelectorAll('.note')[2].textContent = pools.length === 1 ? 'The one pool' : 'All pools together';
+  $('poolNote').textContent = s.detail.pools.otherTokens ? `${s.detail.pools.otherTokens} beacons for other tokens left out` : '';
+  const sortedPools = [...pools].sort((a, b) => b.y - a.y);
+  $('poolsTable').innerHTML = sortedPools.length ? `<tr><th>Address</th><th>MINIMA</th><th>MxUSD</th><th>Price</th><th>Against MEXC</th></tr>` + sortedPools.map((p) => {
+    const spot = p.y / p.x;
+    return `<tr><td><code>${esc(p.address)}</code></td><td>${int(p.x)}</td><td>${usd(p.y)}</td><td>${px(spot)}</td><td>${ref ? pct((spot / ref - 1) * 100) : '-'}</td></tr>`;
+  }).join('') : '<tr><td class="empty left">No funded pools found.</td></tr>';
+  const sizes = [1000, 5000, 10000, 25000, 50000];
+  $('quotesTable').innerHTML = `<tr><th>MINIMA</th><th>You sell into pools at</th><th>Against MEXC</th><th>You buy from pools at</th><th>Against MEXC</th></tr>` + sizes.map((z) => {
+    const sell = walkQuote(s.books.POOL.bids, z, true), buy = walkQuote(s.books.POOL.asks, z, false);
+    const g = (x) => (x && ref ? pct((x / ref - 1) * 100) : '-');
+    return `<tr><td>${int(z)}</td><td>${px(sell)}</td><td>${g(sell)}</td><td>${px(buy)}</td><td>${g(buy)}</td></tr>`;
+  }).join('');
+  drawDepth(s);
+}
+
+/* The tip: the server's latest reading (every 5 s from the bot node, 30 s from the shared one), else the last scan's.
+ * Its age is counted here every second, from the block's own time, so it never sits frozen between reads. */
+let shownBlock = null, flashUntil = 0;
+function tickBlock() {
+  const el = document.getElementById('blockPill');
+  if (!el || !state) return;
+  const t = state.tip && state.tip.block ? state.tip : state.snapshot ? { block: state.snapshot.tip, timemilli: Date.parse(state.snapshot.at) - state.snapshot.tipAge * 1000, source: 'last scan' } : null;
+  if (!t) { el.textContent = 'Block -'; return; }
+  if (shownBlock !== null && t.block > shownBlock) flashUntil = Date.now() + 2500;
+  shownBlock = t.block;
+  const age = Math.max(0, (Date.now() - t.timemilli) / 1000);
+  el.className = 'pill' + (age > 300 ? ' warn' : '') + (Date.now() < flashUntil ? ' fresh' : '');
+  el.title = `Read from the ${t.source}${t.source === 'bot node' ? ', every 5 s' : t.source === 'shared node' ? ', every 30 s (start the bot node for a closer follow)' : ''}`;
+  el.innerHTML = `${age > 300 ? '<b>! Node behind</b>, ' : ''}Block ${int(t.block)}, ${Math.round(age) < 90 ? Math.round(age) + ' s' : ago(age)} old`;
+}
+setInterval(tickBlock, 1000);
+
+function drawPills() {
+  const { scan, snapshot: s } = state;
+  const pills = [];
+  if (scan.error && !scan.ok) pills.push(`<span class="pill crit"><b>&#10005; Scan failed</b>: ${esc(scan.error)}</span>`);
+  else if (scan.lastAt) pills.push(`<span class="pill good"><b>&#10003; Scanning</b></span>`);
+  else pills.push(`<span class="pill">Reading venues, first scan in progress</span>`);
+  pills.push('<span class="pill" id="blockPill"></span>');
+  if (s) {
+    const up = s.detail.fast.relays.filter((r) => r.ok).length;
+    pills.push(`<span class="pill ${up ? '' : 'crit'}">Relays ${up} of ${s.detail.fast.relays.length}</span>`);
+    if (s.detail.mexcError) pills.push(`<span class="pill crit"><b>&#10005; MEXC not answering</b></span>`);
+  }
+  pills.push(`<span class="pill">Maker: <b>${state.maker.running ? 'running on paper' : 'stopped'}</b></span>`);
+  pills.push(`<span class="pill link" data-go="connections#set-node">Node: <b>${esc(state.node.phase.replace('-', ' '))}</b></span>`);
+  pills.push(`<span class="pill link" data-go="connections#set-mexc">MEXC: <b>${state.mexc.connected ? 'connected' : 'not connected'}</b></span>`);
+  pills.push(`<span class="pill link" data-go="connections#set-xt">XT: <b>${state.xt.connected ? 'connected' : 'not connected'}</b></span>`);
+  $('pills').innerHTML = pills.join('');
+  tickBlock();
+  $('scanNote').textContent = scan.lastAt ? `Scanned ${ago((state.now - scan.lastAt) / 1000)} ago, next in ${ago(Math.max(0, (scan.nextAt - state.now) / 1000))}` : '';
+}
+
+const FIELDS = [
+  ['skew', 'Skew, %', 'Shifts the ladder from the MEXC mid'],
+  ['spread', 'First rung, %', 'From the mid to the nearest rung'],
+  ['step', 'Slope, %', 'Added for each rung further out'],
+  ['levels', 'Levels', '1 to 6 on each side'],
+  ['shape', 'Shape', 'How the size is spread over the rungs'],
+  ['askSize', 'Ask size, MINIMA', 'Average per sell rung'],
+  ['bidSize', 'Bid size, MINIMA', 'Average per buy rung'],
+  ['reprice', 'Reprice at, %', 'Drift before a rung moves'],
+  ['cooldownSeconds', 'Wait after a fill, s', 'Before that rung returns'],
+  ['settleBlocks', 'Settles after, blocks', 'Before proceeds can be reused'],
+  ['startMinima', 'Paper MINIMA', 'Used at the first Start'],
+  ['startMxusd', 'Paper MxUSD', 'Used at the first Start'],
+];
+
+const SHAPE_WORDS = { flat: 'Flat: the same on every rung', grow: 'Grow: more further out', curve: 'Curve: more near the mid' };
+const shapeSelect = (id, v) => `<select id="${id}">${Object.entries(SHAPE_WORDS).map(([k, l]) => `<option value="${k}"${k === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
+function fillForm(cfg) {
+  $('mmForm').innerHTML = FIELDS.map(([k, l, h]) => `<div class="field"${k === 'shape' ? ' style="grid-column: span 2"' : ''}><label for="f-${k}">${esc(l)}</label>${k === 'shape' ? shapeSelect('f-shape', cfg.shape) : `<input id="f-${k}" inputmode="decimal" value="${esc(cfg[k])}">`}<div class="hint">${esc(h)}</div></div>`).join('');
+  formFilled = true;
+}
+const readForm = () => Object.fromEntries(FIELDS.map(([k]) => [k, $('f-' + k).value.trim().replace(',', '.')]));
+
+function setMsg(text, cls, id = 'mmMsg') { const m = $(id); m.textContent = text; m.className = (id === 'mmMsg' ? '' : 'msg-line ') + (cls || ''); }
+
+const RUNG_WORD = { preview: 'Would place', live: 'Resting', waiting: 'Waiting after a fill', short: 'Not enough paper funds' };
+
+function drawMaker() {
+  const m = state.maker;
+  if (!formFilled) fillForm(m.config);
+  $('mmStatus').innerHTML = m.running ? '<span class="good">&#10003; Running on paper</span>' : 'Stopped';
+  const f = m.feed;
+  $('mmFeed').textContent = f.withdrawn ? 'No usable MEXC price: quoting is withdrawn.'
+    : `MEXC read ${ago(f.ageSeconds)} ago${f.widen > 1 ? `, spread widened ${f.widen.toFixed(1)}x because the price is old` : ''}${f.jumpWaiting ? ', a price jump is waiting for a second read' : ''}`;
+  const tile = (label, value, note) => `<div class="tile"><div class="label">${esc(label)}</div><div class="value">${esc(value)}</div><div class="note">${esc(note)}</div></div>`;
+  const inv = m.inventory;
+  $('mmTiles').innerHTML =
+    tile('Result against holding', m.edge === null ? '-' : signed(m.edge, 4) + ' MxUSD', 'Paper') +
+    tile('Paper MINIMA', inv ? int(inv.minima) : '-', m.settling.minima ? `${int(m.settling.minima)} more settling` : m.start ? `Started with ${int(m.start.minima)}` : 'Set at the first Start') +
+    tile('Paper MxUSD', inv ? usd(inv.mxusd) : '-', m.settling.mxusd ? `${usd(m.settling.mxusd)} more settling` : m.start ? `Started with ${usd(m.start.mxusd)}` : 'Set at the first Start') +
+    tile('Fills', int(m.fillCount), `${int(m.requotes)} quotes placed`);
+  $('btnStart').disabled = m.running;
+  $('btnStop').disabled = !m.running;
+  $('btnReset').disabled = m.running || !inv;
+  $('rungsTitle').textContent = m.running ? 'Paper orders' : 'Orders it would place';
+  const rows = [...m.rungs].sort((a, b) => b.price - a.price);
+  $('rungsTable').innerHTML = rows.length ? `<tr><th>Rung</th><th class="left">Side</th><th>Price</th><th>MINIMA</th><th>Against mid</th><th class="left">State</th></tr>` + rows.map((r) =>
+    `<tr><td>${esc(r.key)}</td><td class="left">${r.side === 'sell' ? 'Sell' : 'Buy'}</td><td>${px(r.price)}</td><td>${int(r.qty)}</td><td>${f.mid ? pct((r.price / f.mid - 1) * 100) : '-'}</td><td class="left">${esc(RUNG_WORD[r.status] || r.status)}</td></tr>`).join('')
+    : '<tr><td class="empty left">No orders until there is a usable MEXC price.</td></tr>';
+  $('fillsNote').textContent = m.fillCount ? `Latest ${Math.min(50, m.fillCount)} of ${int(m.fillCount)}` : '';
+  $('fillsTable').innerHTML = m.fills.length ? `<tr><th>Time</th><th class="left">Side</th><th>Price</th><th>MINIMA</th><th class="left">Against</th></tr>` + m.fills.map((x) =>
+    `<tr><td>${clock(x.at, true)}</td><td class="left">${x.side === 'sell' ? 'Sold' : 'Bought'}</td><td>${px(x.price)}</td><td>${int(x.qty)}</td><td class="left">${esc(x.against.replace('POOL', 'PandaPools'))}</td></tr>`).join('')
+    : '<tr><td class="empty left">No fills yet.</td></tr>';
+  lineChart($('edgeChart'), {
+    series: [{ name: 'Against holding', color: COLOR.FAST, points: m.series.map((p) => [p.t, p.edge]) }],
+    xFmt: (v, span) => clock(v, span > 86400000), yFmt: (v) => usd(v), tipX: (v) => clock(v, true), tipY: (v) => signed(v, 4) + ' MxUSD', zero: true, label: 'Paper result against holding', yWidth: 50,
+    empty: 'Starts once the maker has run through two scans.',
+  });
+}
+
+async function post(path, body) {
+  const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+  return r.json();
+}
+
+async function press(btn, path, body, sending, done, msgId, prefix) {
+  document.querySelectorAll('.field input.bad').forEach((x) => x.classList.remove('bad'));
+  btn.disabled = true;
+  setMsg(sending, '', msgId);
+  try {
+    const j = await post(path, body);
+    if (j.ok) { state = { ...state, ...j }; setMsg(done, 'good', msgId); }
+    else { setMsg(j.error || 'That was refused.', 'crit', msgId); if (j.field) { const el = $(prefix + j.field); if (el) { el.classList.add('bad'); el.focus(); } } }
+    return !!j.ok;
+  } catch { setMsg('The local server did not answer. Is it still running?', 'crit', msgId); return false; }
+  finally { btn.disabled = false; drawMaker(); drawMexc(); drawNode(); drawLive(); drawPills(); }
+}
+const mmBody = () => ({ config: readForm() });
+
+$('btnStart').onclick = (e) => press(e.target, '/api/mm/start', mmBody(), 'Starting...', 'Running on paper. Fills are judged at each scan, once a minute.', 'mmMsg', 'f-');
+$('btnStop').onclick = (e) => press(e.target, '/api/mm/stop', {}, 'Stopping...', 'Stopped. Paper orders withdrawn, balances kept.', 'mmMsg', 'f-');
+$('btnSave').onclick = (e) => press(e.target, '/api/mm/config', mmBody(), 'Saving...', 'Saved. The paper maker uses it from now on.', 'mmSetMsg', 'f-');
+$('btnReset').onclick = (e) => press(e.target, '/api/mm/reset', {}, 'Starting over...', 'Paper record cleared, the old one kept in the data folder. Paper balances are set at the next Start.', 'mmMsg', 'f-');
+
+let relaysFilled = false;
+// The Overview's profit and loss: only what this desk trades (its journal), and the paper maker against holding.
+function drawPnl() {
+  const d = state.desk, p = d.pnl, mm = state.maker;
+  if (!relaysFilled && state.settings && state.settings.relays) { $('r-relays').value = state.settings.relays.join('\n'); relaysFilled = true; }
+  const tile = (l, v, n) => `<div class="tile"><div class="label">${esc(l)}</div><div class="value">${esc(v)}</div><div class="note">${esc(n)}</div></div>`;
+  const any = p.trades > 0;
+  $('pnlTiles').innerHTML =
+    tile('Desk result', any && p.total !== null ? signed(p.total, 4) + ' MxUSD' : '-', any ? `From ${int(p.trades)} legs since ${clock(p.since, true)}, MINIMA held marked at the MEXC mid` : 'No desk trade yet') +
+    tile('MINIMA bought or sold', any ? (p.minima > 0 ? '+' : '') + int(p.minima) : '-', any ? `Cash ${signed(p.cash, 4)} MxUSD or USDT, fees about ${usd(p.fees, 4)}` : 'Counted from the first desk trade') +
+    tile('Routes, this run', d.run ? signed(d.runPnl, 4) + ' MxUSD' : '-', d.run ? `Run ${d.run}` : 'No live run yet') +
+    tile('Paper maker', mm.edge === null ? '-' : signed(mm.edge, 4) + ' MxUSD', 'Against just holding');
+}
+
+// Settings lines for each key, and the Exchanges tab: balances, this desk's resting orders and its fills, per exchange.
+function keyLine(x, lineId, offId) {
+  $(lineId).innerHTML = x.connected ? `<span class="good">&#10003; Connected</span>, key ending ${esc(x.keyEnd)}.` : 'Not connected';
+  if (x.error) $(lineId).innerHTML += ` <span class="crit"><b>&#10005; ${esc(x.error)}</b></span>`;
+  $(offId).disabled = !x.connected;
+}
+function drawMexc() {
+  drawPnl();
+  keyLine(state.mexc, 'mexcLine', 'btnMexcOff');
+  keyLine(state.xt, 'xtLine', 'btnXtOff');
+  const d = state.desk;
+  const card = (key, x) => {
+    const name = d.exchanges[key].name, b = x.balances;
+    const mine = (x.openOrders || []).filter((o) => o.ours);
+    const fills = d.journal.filter((e) => e.exFill && e.exOrder && e.exOrder.venue === key && Number(e.exFill.executedQty) > 0);
+    const bal = b ? `${int(b.MINIMA.free)} MINIMA and ${usd(b.USDT.free)} USDT free, ${int(b.MINIMA.locked)} MINIMA and ${usd(b.USDT.locked)} USDT in orders (anyone's)` : x.connected ? 'Reading balances...' : 'Connect a key above';
+    return `<div class="card"><div class="head"><div><h2>${esc(name)}: balances and this desk's orders</h2><div class="sub">Taker fee ${Number(d.exchanges[key].fee) * 100}%. Orders placed by hand or by another bot are not shown and do not count.</div></div></div>
+      <p class="sub" style="margin:0 0 8px">${esc(bal)}</p>
+      <h3 class="subhead">This desk's resting orders</h3>
+      <div class="scroll"><table>${mine.length ? '<tr><th class="left">Side</th><th>Price</th><th>MINIMA left</th><th>Filled</th><th>Placed</th></tr>' + mine.map((o) => `<tr><td class="left">${o.side === 'buy' ? 'Buy' : 'Sell'}</td><td>${px(o.price)}</td><td>${int(o.qty)}</td><td>${int(o.filled)}</td><td>${clock(o.time, true)}</td></tr>`).join('') : '<tr><td class="empty left">None.</td></tr>'}</table></div>
+      <h3 class="subhead">This desk's fills</h3>
+      <div class="scroll"><table>${fills.length ? '<tr><th>Time</th><th class="left">Trade</th><th class="left">Side</th><th>MINIMA</th><th>USDT</th><th>Price</th></tr>' + fills.map((e) => { const q = Number(e.exFill.executedQty), u = Number(e.exFill.quoteQty); return `<tr><td>${clock(e.at, true)}</td><td class="left">${esc(e.label)}</td><td class="left">${e.exOrder.side === 'BUY' ? 'Buy' : 'Sell'}</td><td>${num(q, 2)}</td><td>${num(u, 4)}</td><td>${px(q ? u / q : null)}</td></tr>`; }).join('') : '<tr><td class="empty left">None yet.</td></tr>'}</table></div>
+    </div>`;
+  };
+  $('ex-mexc').innerHTML = card('mexc', state.mexc);
+  $('ex-xt').innerHTML = card('xt', state.xt);
+}
+
+const NODE_FIELDS = [
+  ['javaPath', 'Java', 'java.exe, JDK 17'], ['jarPath', 'Minima jar', 'minima.jar'], ['dataDir', 'Data folder', 'Created if missing'],
+  ['basePort', 'Node port', 'Not one of the shared nodes'], ['memoryMb', 'Memory, MB', '512 to 8192'], ['peers', 'Peers', 'host:port, comma separated'],
+  ['watchRpc', 'Or watch a node elsewhere', 'Its RPC address. Leave empty to run one here'],
+];
+let nodeFilled = false, timingFilled = false;
+function fillNodeForm(c) {
+  $('nodeForm').innerHTML = NODE_FIELDS.map(([k, l, h]) => `<div class="field"><label for="n-${k}">${esc(l)}</label><input id="n-${k}" value="${esc(c[k])}" spellcheck="false"><div class="hint">${esc(h)}</div></div>`).join('') +
+    `<div class="field"><label for="n-useForScan"><input id="n-useForScan" type="checkbox" style="width:auto;margin-right:6px"${c.useForScan ? ' checked' : ''}>Read the venues from this node</label><div class="hint">Once it is at the chain tip</div></div>`;
+  nodeFilled = true;
+}
+const nodeBody = () => ({ config: { ...Object.fromEntries(NODE_FIELDS.map(([k]) => [k, $('n-' + k).value.trim()])), useForScan: $('n-useForScan').checked } });
+const NODE_WORD = { running: '<span class="good">&#10003; Running</span>', starting: 'Starting', stopping: 'Stopping', stopped: 'Stopped', 'not-answering': '<span class="crit">&#10005; Not answering</span>' };
+
+function drawNode() {
+  const n = state.node, l = n.live;
+  if (!nodeFilled) fillNodeForm(n.config);
+  if (!timingFilled) { $('t-poolConfirms').value = state.settings.poolConfirms; $('t-fastConfirms').value = state.settings.fastConfirms; timingFilled = true; }
+  $('nodeStatus').innerHTML = NODE_WORD[n.phase] || esc(n.phase);
+  $('nodeLine').textContent = n.watching ? `Watching ${n.rpc}` : `${n.rpc}${n.startedHere ? ', started from here' : ''}`;
+  const tm = state.snapshot && state.snapshot.timing;
+  $('timingLine').textContent = tm ? `Blocks take about ${Math.round(tm.blockSeconds)} s, from the chain. Time risk uses ${tm.volatility.measured ? 'measured' : 'an assumed'} price movement.` : '';
+  const tile = (t, v, nt) => `<div class="tile"><div class="label">${esc(t)}</div><div class="value">${esc(v)}</div><div class="note">${esc(nt)}</div></div>`;
+  $('nodeTiles').innerHTML =
+    tile('Block', l ? int(l.tip) : '-', l ? `${ago(Math.max(0, l.tipAge))} old` : 'Node not answering') +
+    tile('Peers', l ? int(l.peers) : '-', l ? `${int(l.mempool)} waiting in its mempool` : '') +
+    tile('MINIMA', l ? usd(l.minima.sendable) : '-', l ? `${usd(l.minima.confirmed)} confirmed` : '') +
+    tile('MxUSD', l ? usd(l.mxusd.sendable) : '-', l ? `${usd(l.mxusd.confirmed)} confirmed` : '') +
+    tile('Key uses, highest', l && l.maxKeyUses !== null ? int(l.maxKeyUses) : '-', l && l.keyCount !== null ? `Across ${int(l.keyCount)} keys` : 'Each signature spends one');
+  $('btnNodeStart').disabled = n.watching || n.phase === 'running' || n.phase === 'starting' || n.phase === 'stopping';
+  $('btnNodeStop').disabled = !n.startedHere || n.phase === 'stopping' || n.watching;
+  $('btnPeer').disabled = !l;
+  const pick = $('n-mmrPick'), hosts = n.megammr || [];
+  if (!pick.options.length && hosts.length) {
+    pick.innerHTML = hosts.map((h) => `<option value="${esc(h.host)}">${esc(h.name)}, ${esc(h.host)}</option>`).join('') + '<option value="">Another, typed below</option>';
+    $('n-mmrHost').value = hosts[0].host;
+  }
+  const rs = n.resync;
+  $('btnResync').disabled = !l || (rs && rs.state === 'running');
+  if (rs && !$('resyncMsg').dataset.own) {
+    const since = ago(Math.round((Date.now() - rs.startedAt) / 1000));
+    setMsg(rs.state === 'running' ? `Resyncing from ${rs.host}, started ${since} ago. It can take several minutes.` : rs.state === 'done' ? `Resync from ${rs.host} finished. ${rs.note || ''}` : `Resync from ${rs.host} failed: ${rs.note}`, rs.state === 'failed' ? 'crit' : rs.state === 'done' ? 'good' : '', 'resyncMsg');
+  }
+  const pre = $('nodeLog');
+  const atEnd = pre.scrollHeight - pre.scrollTop - pre.clientHeight < 30;
+  pre.textContent = n.log || 'No log yet. It appears when the node starts here.';
+  if (atEnd) pre.scrollTop = pre.scrollHeight;
+}
+
+$('btnMexcConnect').onclick = async (e) => {
+  const ok = await press(e.target, '/api/mexc/connect', { apiKey: $('m-apiKey').value, apiSecret: $('m-apiSecret').value }, 'Checking the key with MEXC...', 'Connected. Reading your trades now.', 'mexcMsg', 'm-');
+  if (ok) { $('m-apiKey').value = ''; $('m-apiSecret').value = ''; }
+};
+$('btnMexcOff').onclick = (e) => press(e.target, '/api/mexc/disconnect', {}, 'Disconnecting...', 'Disconnected and the stored key erased.', 'mexcMsg', 'm-');
+$('btnXtConnect').onclick = async (e) => {
+  const ok = await press(e.target, '/api/xt/connect', { apiKey: $('x-apiKey').value, apiSecret: $('x-apiSecret').value }, 'Checking the key with XT...', 'Connected.', 'xtMsg', 'x-');
+  if (ok) { $('x-apiKey').value = ''; $('x-apiSecret').value = ''; }
+};
+$('btnXtOff').onclick = (e) => press(e.target, '/api/xt/disconnect', {}, 'Disconnecting...', 'Disconnected and the stored key erased.', 'xtMsg', 'x-');
+$('btnNodeStart').onclick = (e) => press(e.target, '/api/node/start', nodeBody(), 'Starting the node...', 'Starting. It can take a few minutes to catch up with the chain.', 'nodeMsg', 'n-');
+$('btnNodeStop').onclick = (e) => press(e.target, '/api/node/stop', {}, 'Asking the node to stop...', 'Stopping cleanly. This can take a minute.', 'nodeMsg', 'n-');
+$('btnNodeSave').onclick = (e) => press(e.target, '/api/node/config', nodeBody(), 'Saving...', 'Saved.', 'nodeSetMsg', 'n-');
+$('btnRelays').onclick = (e) => press(e.target, '/api/settings/relays', { relays: $('r-relays').value }, 'Saving...', 'Saved. The next scan reads these relays.', 'relaysMsg', 'r-');
+$('btnPeer').onclick = (e) => press(e.target, '/api/node/peer', { peer: $('n-peer').value }, 'Connecting...', 'Asked the node to connect.', 'peerMsg', 'n-');
+$('n-mmrPick').onchange = (e) => { $('n-mmrHost').value = e.target.value; if (!e.target.value) $('n-mmrHost').focus(); };
+$('btnResync').onclick = (e) => {
+  const host = $('n-mmrHost').value.trim();
+  if (!confirm(`Resync the bot node's chain from ${host}?\n\nThe wallet and its keys stay as they are. The node rebuilds its chain data, which can take several minutes.`)) return;
+  press(e.target, '/api/node/resync', { host }, 'Asking the node to resync...', 'Resync started. It can take several minutes; the block tile shows when it is back.', 'resyncMsg', 'n-');
+};
+$('btnTiming').onclick = (e) => press(e.target, '/api/settings', { poolConfirms: $('t-poolConfirms').value, fastConfirms: $('t-fastConfirms').value }, 'Saving...', 'Saved. Routes use this from now on.', 'timingMsg', 't-');
+
+// ---------------------------------------------------------------- help: a ? beside each setting that has an explanation
+const HELP = {
+  'n-javaPath': 'Where java.exe is: Minima runs on Java 17. For example C:\\Program Files\\Eclipse Adoptium\\jdk-17...\\bin\\java.exe. Any Java 17 runtime works.',
+  'n-jarPath': 'The minima.jar this node runs. Use the latest release from Minima, and keep it up to date like any node.',
+  'n-dataDir': 'The folder where this node keeps its chain and its wallet. Use a folder only for this bot. It is created if missing; back it up like any node data.',
+  'n-basePort': 'The node\'s base port. It uses this port and the next few; its command (RPC) port is this one plus 4. Pick ports no other node on this computer uses.',
+  'n-memoryMb': 'Memory for the node\'s Java. 1024 MB suits most; give more if it syncs slowly.',
+  'n-peers': 'Nodes to connect to at start, as host:port, separated by commas. Any public Minima node works.',
+  'n-watchRpc': 'To use a node you run elsewhere instead of starting one here: its RPC address, for example http://203.0.113.5:9505. Leave empty to run the node here.',
+  'n-useForScan': 'Read the venues (pools, PandaDEX, the checks on Dexicon orders) from this node once it is at the chain tip, instead of the default read node.',
+  'n-peer': 'Connect this node to one more peer now, if it is stuck behind the chain or has few peers.',
+  'n-mmrPick': 'A MegaMMR node holds a compact copy of the chain. Resyncing from one puts this node on the tip in minutes instead of catching up block by block. Minima runs the official one; Spartacus and Eurobuddha run others. If one does not answer, try another.',
+  'n-mmrHost': 'The MegaMMR node to use, as host:port. It must run with -megammr. Only a chain resync is sent: never a seed phrase, so the wallet is unchanged. The desk must be disarmed.',
+  'm-apiKey': 'On MEXC, API Management: tick only View Account Details, View Order Details and Trade. No withdrawal. Link this computer\'s IP address. Paste the Access Key here.',
+  'm-apiSecret': 'The Secret Key MEXC shows once, when the key is created. Paste it here only, nowhere else. It is stored encrypted and never shown again.',
+  'x-apiKey': 'On XT.com: a key with spot trading and reading, no withdrawal and no transfer, limited to this computer\'s IP address. Paste its API key here.',
+  'x-apiSecret': 'The secret XT shows once. Paste it here only. It is stored encrypted and never shown again.',
+  'r-relays': 'The Dexicon relays where fast orders are published, one https address per line. The defaults are Eurobuddha\'s three; any relay lists the others at /dex/relays.',
+  't-poolConfirms': 'How many blocks a pool trade is waited for before it counts as done. PandaPools shows Confirming n/3. More is safer and slower.',
+  't-fastConfirms': 'How many blocks a Dexicon fill is waited for.',
+  'f-skew': 'Moves the whole ladder up (positive) or down (negative) from the MEXC mid, in %.',
+  'f-spread': 'How far the nearest rung sits from the mid, in %.',
+  'f-step': 'The slope: how much further each next rung sits, in %.',
+  'f-levels': 'How many rungs on each side, 1 to 6.',
+  'f-shape': 'How the size is spread over the rungs: flat (the same), grow (more further out), curve (more near the mid).',
+  'f-askSize': 'The average MINIMA offered per sell rung.',
+  'f-bidSize': 'The average MINIMA bid per buy rung.',
+  'f-reprice': 'How far the mid must move, in %, before a rung is placed again.',
+  'f-cooldownSeconds': 'After a rung fills, how long before it comes back.',
+  'f-settleBlocks': 'Blocks before the proceeds of a fill can be used again, as on chain.',
+  'f-startMinima': 'The paper MINIMA the paper maker starts with.',
+  'f-startMxusd': 'The paper MxUSD the paper maker starts with.',
+  'e-run': 'A name for this live run. Its envelope and results are kept under evidence/<date>-<name>. Each envelope is a new run.',
+  'e-maxMinima': 'The most MINIMA any single trade may move.',
+  'e-maxMxusd': 'The most MxUSD (or USDT) any single trade may move.',
+  'e-tradesPerDay': 'The most trades this run may send in a day.',
+  'e-lossCap': 'When the run\'s routes have lost this much, the desk disarms itself.',
+  'e-slippagePct': 'How far past the best price an exchange order may fill, in %. A limit price further through the book is refused.',
+  'e-minEdge': 'A route is sent only if its gain after fees is at least this, in MxUSD.',
+  'e-confirmations': 'In a route, how many blocks the pool trade is waited for before the exchange trade is sent.',
+  'e-crossPercent': 'Take when crossed: the gain after fees, as % of the trade, needed before the desk sends a route by itself.',
+  'e-autoCooldown': 'Take when crossed: the least time between two takes, 180 s or more.',
+  'e-levels': 'For resting orders: how many rungs on each side.',
+  'e-spread': 'For resting orders: how far the nearest rung sits from the mid, in %.',
+  'e-slope': 'For resting orders: how much further each next rung sits, in %.',
+  'e-shape': 'For resting orders: how the size is spread over the rungs.',
+  'e-takerOn': 'Turns the taker rule on for this run. It acts only while the desk is armed, in live mode.',
+  'e-takerVenue': 'The exchange whose book the taker watches and trades.',
+  'e-takerSide': 'Buy takes asks (you buy MINIMA); sell hits bids (you sell MINIMA).',
+  'e-takerLimit': 'The worst price the taker accepts: for a buy, asks at or under it; for a sell, bids at or over it.',
+  'e-takerMinSize': 'Only levels holding at least this many MINIMA count. Note: a limit order also takes any smaller levels at better prices on its way.',
+  'e-takerMaxGap': 'How far a level may sit from the other side: for a buy, an ask at most this above the best bid; for a sell, a bid at most this under the best ask. Keeps the taker out of a wide, thin book.',
+  'e-takerCooldown': 'The least time between two takes, so a fill can be checked before the next.',
+  'e-autoTake': 'When on, while armed, the desk sends an allowed route by itself after a scan, if its gain clears both thresholds. Every cap still applies.',
+  'set-mode': 'Live: real trades from the Trade tab, inside an envelope. Paper: a rehearsal, the paper maker runs and nothing reaches a venue.',
+  'set-arm': 'Arming lets the Trade tab send real trades within the envelope. Blocks appear here when a trade needs your attention; release one only after checking it.',
+  'set-look': 'Colours for this page, kept in this browser.',
+};
+function addHelp() {
+  for (const [id, text] of Object.entries(HELP)) {
+    const card = id.startsWith('set-') ? document.getElementById(id) : null;
+    const anchor = card ? card.querySelector('h2') : document.querySelector(`label[for="${id}"]`) || (document.getElementById(id) && document.getElementById(id).closest('label'));
+    if (!anchor || anchor.dataset.helped) continue;
+    anchor.dataset.helped = '1';
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'help-btn'; btn.textContent = '?'; btn.setAttribute('aria-label', 'What is this?'); btn.setAttribute('aria-expanded', 'false');
+    const box = document.createElement('div'); box.className = 'help-text'; box.hidden = true; box.textContent = text;
+    btn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); box.hidden = !box.hidden; btn.setAttribute('aria-expanded', String(!box.hidden)); };
+    anchor.appendChild(btn);
+    (card ? anchor.closest('.head') : anchor).insertAdjacentElement('afterend', box);
+  }
+}
+$('helpOn').checked = !document.documentElement.classList.contains('no-help');
+$('helpOn').onchange = () => { const on = $('helpOn').checked; document.documentElement.classList.toggle('no-help', !on); try { localStorage.setItem('help', on ? 'on' : 'off'); } catch {} };
+
+// ---------------------------------------------------------------- appearance
+const THEMES = {"paper":["#f4f3ef","#fcfcfb","#256abf","#eb6834"],"sky":["#e6f0fb","#f7fbff","#1f6fd1","#eb6834"],"mint":["#e5f5ee","#f7fdfa","#0b7a5a","#eb6834"],"sunrise":["#fff1e0","#fffaf3","#c4420c","#eb6834"],"ocean":["#15304d","#1d3d5e","#74bbff","#d95926"],"plum":["#2b2140","#392b4f","#c7a8ff","#d95926"],"forest":["#1c3529","#26463a","#8fd0ff","#d95926"],"charcoal":["#24262b","#2d3036","#5598e7","#d95926"]};
+const THEME_NAMES = { system: 'Follow the system', paper: 'Paper', sky: 'Sky', mint: 'Mint', sunrise: 'Sunrise', ocean: 'Ocean', plum: 'Plum', forest: 'Forest', charcoal: 'Charcoal' };
+function drawThemes() {
+  const cur = document.documentElement.dataset.theme || 'system';
+  $('themes').innerHTML = Object.entries(THEME_NAMES).map(([k, l]) => {
+    const c = k === 'system' ? ['#f4f3ef', '#24262b', '#256abf', '#5598e7'] : THEMES[k];
+    return `<button type="button" class="theme-btn" data-theme-pick="${k}" aria-pressed="${k === cur}"><span class="sw">${c.map((x) => `<i style="background:${x}"></i>`).join('')}</span><span class="nm">${esc(l)}</span></button>`;
+  }).join('');
+}
+$('themes').onclick = (e) => {
+  const b = e.target.closest('[data-theme-pick]');
+  if (!b) return;
+  const k = b.dataset.themePick;
+  if (k === 'system') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = k;
+  try { if (k === 'system') localStorage.removeItem('theme'); else localStorage.setItem('theme', k); } catch {}
+  drawThemes(); redraw();
+};
+drawThemes();
+
+// ---------------------------------------------------------------- links inside the page: data-go="connections#set-node" or "maker:setup"
+function go(target) {
+  const [tabPart, anchor] = target.split('#');
+  const [tab, sub] = tabPart.split(':');
+  const b = document.querySelector(`nav button[data-tab="${tab}"]`);
+  if (b) b.click();
+  if (tab === 'maker' && sub) { const m = document.querySelector(`[data-mm-pick="${sub}"]`); if (m) m.click(); }
+  if (anchor) setTimeout(() => { const el = document.getElementById(anchor); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
+  else scrollTo({ top: 0 });
+}
+document.addEventListener('click', (e) => { const t = e.target.closest('[data-go]'); if (!t) return; e.preventDefault(); go(t.dataset.go); });
+document.addEventListener('keydown', (e) => { if (e.key !== 'Enter') return; const t = e.target.closest && e.target.closest('[data-go]'); if (t) go(t.dataset.go); });
+
+// ---------------------------------------------------------------- market maker views
+/* Live mode: Envelope and ladder (where Market maker opens), Live desk. Paper mode: Paper maker (where it opens), and the
+ * ladder and timing without the envelope. */
+const paperMode = () => !!(state && state.settings && state.settings.mode === 'paper');
+const mmViews = () => (paperMode() ? [['paper', 'Paper maker'], ['setup', 'Ladder and timing']] : [['setup', 'Envelope and ladder']]);
+const mmLanding = () => (paperMode() ? 'paper' : 'setup');
+let mmView = 'setup', mmTabsFor = null;
+function showMm() {
+  const views = mmViews(), key = views.map((v) => v[0]).join();
+  $('mmTabs').hidden = views.length < 2;
+  if (mmTabsFor !== key) { $('mmTabs').innerHTML = views.map(([k, l]) => `<button type="button" role="tab" data-mm-pick="${k}">${esc(l)}</button>`).join(''); mmTabsFor = key; }
+  if (!views.some(([k]) => k === mmView)) mmView = mmLanding();
+  document.querySelectorAll('#mmTabs button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.mmPick === mmView));
+  document.querySelectorAll('.mm-pane').forEach((p) => { p.hidden = p.dataset.mm !== mmView; });
+  $('set-envelope').hidden = paperMode();
+}
+/* The mode, applied everywhere: the root's data-mode (colours), the bar, the Settings card, the Market maker views. */
+let modeShown = null;
+function applyMode() {
+  if (!state || !state.settings) return;
+  const m = state.settings.mode || 'live';
+  document.documentElement.dataset.mode = m;
+  try { localStorage.setItem('mode', m); } catch {}
+  $('modeBar').hidden = m !== 'paper';
+  document.querySelectorAll('[data-mode-pick]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.modePick === m));
+  if (modeShown !== m) { modeShown = m; mmView = mmLanding(); }
+  showMm();
+}
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-mode-pick]'); if (!b) return;
+  const m = b.dataset.modePick; if (state && state.settings && state.settings.mode === m) return;
+  const msg = m === 'paper' ? 'Switch to paper mode? The live desk is disarmed and cannot send anything until you switch back.' : 'Switch to live mode? The paper maker stops (its record is kept). The live desk stays disarmed until you arm it.';
+  if (!confirm(msg)) return;
+  await press(b, '/api/settings/mode', { mode: m }, 'Switching...', m === 'paper' ? 'Paper mode is on.' : 'Live mode is on. The desk is disarmed: arm it below when ready.', 'modeMsg', 'x-');
+  applyMode(); redraw();
+});
+$('mmTabs').onclick = (e) => { const k = e.target.dataset && e.target.dataset.mmPick; if (!k) return; mmView = k; showMm(); redraw(); };
+showMm();
+
+// ---------------------------------------------------------------- order books
+const OB_VIEWS = [['ALL', 'Combined'], ['MEXC', 'MEXC'], ['XT', 'XT.com'], ['FAST', 'Dexicon'], ['POOL', 'PandaPools'], ['BOOK', 'PandaDEX']];
+const OB_SHORT = { FAST: 'Dexicon', MEXC: 'MEXC', XT: 'XT', POOL: 'Pools', BOOK: 'PandaDEX' };
+let obView = 'ALL';
+try { const v = localStorage.getItem('obView'); if (OB_VIEWS.some(([k]) => k === v)) obView = v; } catch {}
+$('obTabs').innerHTML = OB_VIEWS.map(([k, l], i) => `<button type="button" role="tab" data-ob="${k}" title="Key ${i + 1}">${esc(l)}</button>`).join('');
+function setOb(k) { obView = k; try { localStorage.setItem('obView', k); } catch {} drawBooks(); }
+$('obTabs').onclick = (e) => { const k = e.target.dataset && e.target.dataset.ob; if (k) setOb(k); };
+$('obGroup').onchange = () => drawBooks();
+$('obRows').onchange = () => drawBooks();
+addEventListener('keydown', (e) => {
+  if (!$('tab-books').classList.contains('on') || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement && document.activeElement.tagName)) return;
+  const i = OB_VIEWS.findIndex(([k]) => k === obView);
+  let n = null;
+  if (/^[1-6]$/.test(e.key)) n = Number(e.key) - 1;
+  else if (e.key === 'ArrowRight') n = (i + 1) % OB_VIEWS.length;
+  else if (e.key === 'ArrowLeft') n = (i + OB_VIEWS.length - 1) % OB_VIEWS.length;
+  if (n !== null) { e.preventDefault(); setOb(OB_VIEWS[n][0]); }
+});
+
+function drawBooks() {
+  if (!state) return;
+  document.querySelectorAll('#obTabs button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.ob === obView));
+  document.querySelectorAll('.ob-detail').forEach((d) => { d.hidden = d.dataset.obFor !== obView; });
+  const s = state.snapshot;
+  if (!s || !s.books) { $('obTable').innerHTML = '<tr><td class="empty l">Waiting for the first scan.</td></tr>'; return; }
+  const g = Number($('obGroup').value), rowsN = Number($('obRows').value), all = obView === 'ALL';
+  const keys = (all ? ['FAST', 'BOOK', 'POOL', 'MEXC', 'XT'] : [obView]).filter((k) => s.books[k]);
+  // Yours: the orders resting on MEXC for this account, read with its key. Paper: the paper maker's rungs, while it runs.
+  const showYours = all || obView === 'MEXC' || obView === 'XT';
+  // Every order resting on your MEXC and XT accounts, each marked: placed by this app (client id tb...) or not (by hand,
+  // or by any other program using the same account).
+  const tag = (x, venue) => (x.openOrders || []).map((o) => ({ ...o, venue }));
+  const real = !showYours ? [] : obView === 'MEXC' ? tag(state.mexc, 'MEXC') : obView === 'XT' ? tag(state.xt, 'XT') : [...tag(state.mexc, 'MEXC'), ...tag(state.xt, 'XT')];
+  const paperOn = all && state.maker.running, paper = paperOn ? (state.maker.rungs || []).filter((r) => r.status === 'live') : [];
+  const dp = String(g).split('.')[1].length;
+  const bucket = (price, ask) => Number((ask ? Math.ceil(price / g - 1e-7) : Math.floor(price / g + 1e-7)) * g).toFixed(dp);
+  const side = (name, ask) => {
+    const levels = new Map();
+    const at = (price) => { const p = bucket(price, ask); if (!levels.has(p)) levels.set(p, { price: Number(p), qty: 0, by: {}, hand: 0, app: 0, handAt: new Set(), paper: 0 }); return levels.get(p); };
+    for (const k of keys) for (const o of s.books[k][name]) { const r = at(o.price); r.qty += o.qty; r.by[k] = (r.by[k] || 0) + o.qty; }
+    for (const o of real) if ((o.side === 'sell') === ask) { const r = at(o.price); if (o.ours) r.app += o.qty; else { r.hand += o.qty; r.handAt.add(o.venue); } }
+    for (const o of paper) if ((o.side === 'sell') === ask) at(o.price).paper += o.qty;
+    const rows = [...levels.values()].sort((a, b) => (ask ? a.price - b.price : b.price - a.price)).slice(0, rowsN);
+    let cum = 0; const run = {};
+    for (const r of rows) { cum += r.qty; r.cum = cum; for (const [k, q] of Object.entries(r.by)) run[k] = (run[k] || 0) + q; r.cumBy = { ...run }; }
+    return rows;
+  };
+  const asks = side('asks', true), bids = side('bids', false);
+  const maxCum = Math.max(1, ...asks.map((r) => r.cum), ...bids.map((r) => r.cum));
+  const bar = (r) => {
+    let right = 0;
+    return keys.filter((k) => r.cumBy[k]).map((k) => { const q = r.cumBy[k], w = (q / maxCum) * 100, x = `<span style="right:${right}%;width:${w}%;background:${COLOR[k]}" title="${esc(NAMES[k])}: ${int(q)} MINIMA up to this price"></span>`; right += w; return x; }).join('');
+  };
+  const split = (r) => Object.entries(r.by).sort((a, b) => b[1] - a[1]).map(([k, q]) => `${OB_SHORT[k]} ${int(q)}`).join(', ');
+  const row = (r, cls) => `<tr class="${cls}${r.app ? ' mine' : r.hand ? ' hand' : ''}"><td class="p">${r.price.toFixed(dp)}</td><td>${r.qty ? int(r.qty) : '-'}</td><td class="wide">${r.qty ? usd(r.qty * r.price) : '-'}</td><td class="wide">${r.qty ? int(r.cum) : '-'}</td><td class="bar">${bar(r)}</td>${showYours ? `<td class="hand-q" title="${r.hand ? `On your ${[...r.handAt].join(' and ')} account, not placed by this app` : ''}">${r.hand ? int(r.hand) : ''}</td><td class="you" title="${r.app ? 'Placed by this app' : ''}">${r.app ? int(r.app) : ''}</td>` : ''}${paperOn ? `<td class="muted">${r.paper ? int(r.paper) : ''}</td>` : ''}${all ? `<td class="l wide muted where" title="${esc(split(r))}">${esc(split(r))}</td>` : ''}</tr>`;
+  const bestBid = bids.find((r) => r.qty), bestAsk = asks.find((r) => r.qty);
+  const mx = s.venues.MEXC, mexcMid = mx.bid && mx.ask ? (mx.bid + mx.ask) / 2 : null;
+  const crossed = bestBid && bestAsk && bestBid.price >= bestAsk.price;
+  const spread = bestBid && bestAsk ? (bestAsk.price / bestBid.price - 1) * 100 : null;
+  const cols = (all ? 6 : 4) + (showYours ? 2 : 0) + (paperOn ? 1 : 0);
+  const head = `<tr><th>Price</th><th>MINIMA</th><th class="wide">MxUSD</th><th class="wide">Total</th><th class="l">Depth, total from the best price</th>${showYours ? '<th title="Your orders on the exchange that this app did not place">By hand</th><th title="Orders this app placed">App</th>' : ''}${paperOn ? '<th>Paper</th>' : ''}${all ? '<th class="l wide">Where</th>' : ''}</tr>`;
+  const midRow = `<tr class="mid"><td colspan="${cols}">${crossed ? '<b class="warn">! Crossed: a bid is at or above an ask across venues</b>' : spread !== null ? `Spread ${spread.toFixed(2)}%` : 'One side is empty'}${mexcMid ? `, MEXC mid ${px(mexcMid)}` : ''}</td></tr>`;
+  const none = (w) => `<tr><td class="empty l" colspan="${cols}">No ${w} within 15% of the MEXC mid.</td></tr>`;
+  const keyNow = obView + g + rowsN, recentre = keyNow !== drawBooks.last;
+  $('obTable').innerHTML = head + (asks.length ? asks.slice().reverse().map((r) => row(r, 'ask')).join('') : none('asks')) + midRow + (bids.length ? bids.map((r) => row(r, 'bid')).join('') : none('bids'));
+  if (recentre) { const w = document.querySelector('.ob-wrap'), mid = document.querySelector('#obTable tr.mid'); if (w && mid && w.clientHeight) { w.scrollTop = mid.offsetTop - w.clientHeight / 2; drawBooks.last = keyNow; } }
+  const title = OB_VIEWS.find(([k]) => k === obView)[1];
+  const staleNote = Object.entries(s.staleBooks || {}).filter(([k]) => keys.includes(k)).map(([k, sec]) => `${NAMES[k]} did not answer this scan: its book is from ${ago(sec)} ago`).join('; ');
+  $('obLine').innerHTML = (staleNote ? `<b class="warn">! ${esc(staleNote)}.</b> ` : '') + esc(`${title}, read at ${new Date(s.at).toLocaleTimeString('en-GB')} (${ago((state.now - Date.parse(s.at)) / 1000)} ago). Best bid ${bestBid ? bestBid.price.toFixed(dp) : '-'}, best ask ${bestAsk ? bestAsk.price.toFixed(dp) : '-'}, prices grouped by ${g}.`);
+  $('obLegend').innerHTML = keys.map((k) => `<span><i style="background:${COLOR[k]}"></i>${esc(NAMES[k])}</span>`).join('') + (showYours ? `<span><i class="hand-key"></i>Yours by hand: ${real.filter((o) => !o.ours).length}</span><span><i class="mine-key"></i>Placed by the app: ${real.filter((o) => o.ours).length}</span>` : '') + (paperOn ? '<span>Paper: the paper maker rungs</span>' : '');
+}
+
+// ---------------------------------------------------------------- live trading
+const ENV_FIELDS = [
+  ['run', 'Run name', 'Lower case, for example first-pool-test', 'first-run'],
+  ['maxMinima', 'MINIMA per trade, at most', '', '3000'],
+  ['maxMxusd', 'MxUSD per trade, at most', '', '10'],
+  ['tradesPerDay', 'Trades a day, at most', '', '10'],
+  ['lossCap', 'Loss cap, MxUSD', 'Reached: the desk disarms', '2'],
+  ['slippagePct', 'MEXC slippage, %', 'How far past the best price an order may fill', '0.5'],
+  ['minEdge', 'Minimum route edge, MxUSD', 'After fees, or the route is not sent', '0.02'],
+  ['confirmations', 'Blocks before the hedge', 'The pool leg is waited for this long', '1'],
+];
+const ACTION_HINT = {
+  'pool-sell': ['MINIMA to sell', 'Paid in MxUSD to the bot wallet, in one transaction'],
+  'pool-buy': ['MxUSD to spend', 'MINIMA comes to the bot wallet, in one transaction'],
+  'mexc-sell': ['MINIMA to sell', 'A limit order; what has not filled after 4 s is cancelled'],
+  'mexc-buy': ['MINIMA to buy', 'A limit order; what has not filled after 4 s is cancelled'],
+  'route-pool-mexc': ['MxUSD to spend on the pools', 'Then the MINIMA bought is sold on MEXC, once the pool trade is in a block'],
+  'route-mexc-pool': ['MINIMA to sell on the pools', 'Then the same MINIMA is bought back on MEXC, once the pool trade is in a block'],
+  'xt-sell': ['MINIMA to sell', 'A limit order on XT, immediate or cancel'],
+  'xt-buy': ['MINIMA to buy', 'A limit order on XT, immediate or cancel'],
+  'route-pool-xt': ['MxUSD to spend on the pools', 'Then the MINIMA bought is sold on XT, once the pool trade is in a block'],
+  'route-xt-pool': ['MINIMA to sell on the pools', 'Then the same MINIMA is bought back on XT, once the pool trade is in a block'],
+};
+const LIVE_WORD = {
+  done: '<span class="good">&#10003; Done</span>', refused: 'Not sent', lost: 'Pool moved first, nothing done',
+  'one-legged': '<span class="crit"><b>&#10005; One-legged</b></span>', unknown: '<span class="crit"><b>&#10005; Unclear: check it</b></span>',
+  unfilled: 'Nothing filled, cancelled', sending: 'Starting', posting: 'Posting', posted: 'Waiting for a block', hedging: 'Hedging on MEXC',
+};
+const num = (s, d = 8) => (s === null || s === undefined || s === '' ? '-' : Number(s).toLocaleString('en-US', { maximumFractionDigits: d }));
+let envFilled = false, actionsFilled = false, lastPreview = null;
+
+const ENV_AUTO = [
+  ['crossPercent', 'Edge to take, % of the trade', 'After fees; 0.1 or more', '0.5'],
+  ['autoCooldown', 'Wait between takes, s', '180 or more: a pool trade settles in blocks', '300'],
+];
+const ENV_LADDER = [
+  ['levels', 'Rungs a side', '1 to 6', '3'],
+  ['spread', 'First rung, %', 'From the mid to the nearest rung', '0.5'],
+  ['slope', 'Slope, %', 'Added for each rung further out', '0.5'],
+];
+const envField = ([k, l, h, v], hint = {}) => `<div class="field"><label for="e-${k}">${esc(l)}</label><input id="e-${k}" value="${esc(v)}" spellcheck="false"><div class="hint">${esc(hint[k] || h)}</div></div>`;
+function fillEnvForm(d) {
+  const ceil = d.ceiling;
+  const hint = { maxMinima: `Up to ${int(ceil.minimaPerTrade)}`, maxMxusd: `Up to ${ceil.mxusdPerTrade}`, tradesPerDay: `Up to ${ceil.tradesPerDay}` };
+  $('envForm').innerHTML = ENV_FIELDS.map((f) => envField(f, hint)).join('');
+  $('envAutoForm').innerHTML = ENV_AUTO.map((f) => envField(f)).join('');
+  $('envLadderForm').innerHTML = ENV_LADDER.map((f) => envField(f)).join('') +
+    `<div class="field" style="grid-column: span 2"><label for="e-shape">Shape</label>${shapeSelect('e-shape', 'flat')}<div class="hint">How the size is spread over the rungs</div></div>`;
+  const exOn = (k) => { const x = (/(^|-)(mexc|xt)(-|$)/.exec(k) || [])[2]; return !x || (d.exchanges[x] && d.exchanges[x].connected); };
+  $('envActions').innerHTML = Object.entries(d.actions).map(([k, l]) => `<label><input type="checkbox" value="${esc(k)}"${exOn(k) ? ' checked' : ''}>${esc(l)}</label>`).join('');
+  envFilled = true;
+}
+/* The ticket: venue, side and order type map onto the desk's actions; a limit price is sent only for MEXC and XT. */
+const VENUES = [
+  ['mexc', 'MEXC'], ['xt', 'XT.com'], ['pool', 'PandaPools, on chain'],
+  ['route-mexc', 'Route: PandaPools and MEXC'], ['route-xt', 'Route: PandaPools and XT.com'],
+  ['dexicon', 'Dexicon (not built yet)'], ['pandadex', 'PandaDEX (not built yet)'],
+];
+let tk = { venue: 'mexc', side: 'buy', type: 'market' };
+try { tk = { ...tk, ...JSON.parse(localStorage.getItem('ticket') || '{}') }; } catch {}
+const isEx = (v) => v === 'mexc' || v === 'xt';
+function tkAction() {
+  const v = tk.venue, buy = tk.side === 'buy';
+  if (isEx(v)) return `${v}-${buy ? 'buy' : 'sell'}`;
+  if (v === 'pool') return buy ? 'pool-buy' : 'pool-sell';
+  if (v === 'route-mexc') return buy ? 'route-pool-mexc' : 'route-mexc-pool';
+  if (v === 'route-xt') return buy ? 'route-pool-xt' : 'route-xt-pool';
+  return null;
+}
+const spends = () => (tk.venue === 'pool' || tk.venue.startsWith('route')) && tk.side === 'buy';   // the pool leg is sized in MxUSD
+function tkBest() {
+  const vk = { mexc: 'MEXC', xt: 'XT', pool: 'POOL', 'route-mexc': 'POOL', 'route-xt': 'POOL' }[tk.venue];
+  const v = vk && state && state.snapshot && state.snapshot.venues[vk];
+  return v ? (tk.side === 'buy' ? v.ask : v.bid) : null;
+}
+function tkAvail() {
+  const n = state.node.live, m = state.mexc.balances, x = state.xt.balances;
+  const ex = tk.venue === 'mexc' || tk.venue === 'route-mexc' ? m : tk.venue === 'xt' || tk.venue === 'route-xt' ? x : null;
+  const exName = tk.venue.includes('xt') ? 'XT' : 'MEXC';
+  if (isEx(tk.venue)) return tk.side === 'buy' ? { v: ex ? ex.USDT.free : null, unit: 'USDT', where: exName } : { v: ex ? ex.MINIMA.free : null, unit: 'MINIMA', where: exName };
+  const pool = tk.side === 'buy' ? { v: n ? n.mxusd.sendable : null, unit: 'MxUSD', where: 'the bot wallet' } : { v: n ? n.minima.sendable : null, unit: 'MINIMA', where: 'the bot wallet' };
+  return pool;
+}
+let lastUnit = null;
+function ticketChanged(clear = true) {
+  try { localStorage.setItem('ticket', JSON.stringify(tk)); } catch {}
+  const unit = spends() ? 'MxUSD' : 'MINIMA';   // the amount means something else once its unit changes
+  if (lastUnit && unit !== lastUnit) $('l-amount').value = '';
+  lastUnit = unit;
+  if (clear) { lastPreview = null; $('previewTable').innerHTML = ''; }
+  drawTicket();
+}
+function drawTicket() {
+  if (!state) return;
+  const d = state.desk, act = tkAction(), route = tk.venue.startsWith('route');
+  if (!isEx(tk.venue)) tk.type = 'market';
+  $('t-venue').value = tk.venue;
+  const [bL, sL] = route ? [`Buy on pools, sell on ${tk.venue === 'route-xt' ? 'XT' : 'MEXC'}`, `Sell on pools, buy on ${tk.venue === 'route-xt' ? 'XT' : 'MEXC'}`] : ['Buy', 'Sell'];
+  const sb = $('t-side').querySelectorAll('button'); sb[0].textContent = bL; sb[1].textContent = sL;
+  sb.forEach((b) => b.setAttribute('aria-pressed', b.dataset.side === tk.side));
+  $('t-type').querySelectorAll('button').forEach((b) => { b.setAttribute('aria-pressed', b.dataset.type === tk.type); b.disabled = b.dataset.type === 'limit' && !isEx(tk.venue); });
+  const best = tkBest(), limit = tk.type === 'limit';
+  const p = $('l-limit');
+  p.disabled = !limit;
+  if (!limit) p.value = best ? px(best).replace(/0+$/, '') : '';
+  $('t-priceLabel').textContent = isEx(tk.venue) ? 'Price, USDT' : 'Price, MxUSD';
+  $('t-priceHint').textContent = !act ? '' : limit ? `Best ${tk.side === 'buy' ? 'ask' : 'bid'} now ${best ? px(best) : '-'}. Fills at once at this price or better; the rest is cancelled.`
+    : isEx(tk.venue) ? `Market: at the best price, at most ${d.envelope ? d.envelope.slippagePct : '?'}% through it` : 'Market: the pools\' price for this size, exactly as quoted';
+  $('t-amountLabel').textContent = spends() ? 'Spend, MxUSD' : 'Amount, MINIMA';
+  const av = tkAvail();
+  $('t-avail').textContent = av.v === null ? `Available in ${av.where}: unknown` : `Available in ${av.where}: ${num(av.v, av.unit === 'MINIMA' ? 2 : 4)} ${av.unit}`;
+  const amt = Number($('l-amount').value), price = Number(p.value) || best;
+  const total = amt > 0 && price ? (spends() ? amt / price : amt * price) : null;
+  const what = !act ? 'This venue cannot be traded from here yet.'
+    : route ? `Two trades: the pool trade first, then the opposite trade once it is in a block. ${total ? `About ${spends() ? int(total) + ' MINIMA' : usd(total, 2) + ' MxUSD'}.` : ''}`
+    : total ? `About ${spends() ? int(total) + ' MINIMA' : usd(total, 4) + (isEx(tk.venue) ? ' USDT' : ' MxUSD')}, before fees.` : '';
+  $('t-what').textContent = what;
+  $('btnPreview').disabled = !act;
+  const send = $('btnSend');
+  send.textContent = route ? (tk.side === 'buy' ? 'Send route: buy on pools' : 'Send route: sell on pools') : `${tk.side === 'buy' ? 'Buy' : 'Sell'} MINIMA`;
+  send.className = `btn tk-send ${tk.side}`;
+  const fresh = lastPreview && Date.now() - lastPreview.shownAt < 45000;
+  send.disabled = !fresh || !d.armed || !!d.busy;
+  $('t-arm').innerHTML = paperMode() ? 'Paper mode: no real trade. Switch to live in Settings' : d.armed ? '<span class="good">&#10003; Armed</span>' : 'Disarmed: arm it in Settings';
+  $('t-arm').dataset.go = paperMode() ? 'settings#set-mode' : 'settings#set-arm';
+}
+$('t-venue').innerHTML = VENUES.map(([k, l]) => `<option value="${k}"${k === 'dexicon' || k === 'pandadex' ? ' disabled' : ''}>${esc(l)}</option>`).join('');
+$('t-venue').onchange = () => { tk.venue = $('t-venue').value; ticketChanged(); };
+$('t-side').onclick = (e) => { const v = e.target.dataset && e.target.dataset.side; if (v) { tk.side = v; ticketChanged(); } };
+$('t-type').onclick = (e) => { const v = e.target.dataset && e.target.dataset.type; if (v && !e.target.disabled) { tk.type = v; if (v === 'limit' && !$('l-limit').value) $('l-limit').value = (px(tkBest()) || '').replace(/0+$/, ''); ticketChanged(); } };
+$('l-amount').oninput = () => { lastPreview = null; drawTicket(); };
+$('l-limit').oninput = () => { lastPreview = null; drawTicket(); };
+$('t-pcts').onclick = (e) => {
+  const pct = e.target.dataset && Number(e.target.dataset.pct); if (!pct) return;
+  const av = tkAvail(), price = Number($('l-limit').value) || tkBest(); if (!(av.v > 0)) return;
+  let x = (av.v * pct) / 100;
+  if (av.unit === 'USDT' && price) x = x / price / 1.003;   // MINIMA that the USDT buys, leaving room for the fee
+  $('l-amount').value = av.unit === 'MINIMA' || av.unit === 'USDT' ? Math.floor(x * 100) / 100 : Math.floor(x * 10000) / 10000;
+  lastPreview = null; drawTicket();
+};
+
+function drawPreview(p) {
+  const rows = [];
+  const row = (k, v) => rows.push(`<tr><td class="left">${esc(k)}</td><td class="left">${v}</td></tr>`);
+  row('What', esc(p.label));
+  if (p.pool) {
+    row('Pools', p.pool.sellMinima ? `Pay ${num(p.pool.minima)} MINIMA, get ${num(p.pool.mxusd)} MxUSD` : `Pay ${num(p.pool.mxusd)} MxUSD, get ${num(p.pool.minima)} MINIMA`);
+    row('Pool price', `${num(p.pool.price, 8)} MxUSD per MINIMA, across ${p.pool.pools} pool${p.pool.pools > 1 ? 's' : ''}, after the 0.5% fee`);
+  }
+  if (p.ex) {
+    row(p.ex.name, `${p.ex.side === 'BUY' ? 'Buy' : 'Sell'} ${num(p.ex.qty, 2)} MINIMA, limit ${num(p.ex.limit, 5)} (best ${num(p.ex.best, 5)} now)`);
+    row(`${p.ex.name} amount`, `About ${num(p.ex.quote, 4)} USDT, fee about ${num(p.ex.fee, 4)}`);
+  }
+  if (p.edge !== undefined) {
+    row('Edge after fees', `<b class="${Number(p.edge) > 0 ? 'good' : 'crit'}">${signed(Number(p.edge), 4)} MxUSD</b>`);
+    row('Time', `About ${ago(p.seconds)} until the hedge${p.risk !== null ? `; the price can move about ${usd(p.risk, 4)} MxUSD meanwhile` : ''}`);
+  }
+  for (const w of p.warnings) row('Note', `<span class="warn">${esc(w)}</span>`);
+  $('previewTable').innerHTML = rows.join('');
+}
+
+function drawLive() {
+  const d = state && state.desk;
+  if (!d) return;
+  if (!envFilled) fillEnvForm(d);
+  const env = d.envelope;
+  $('liveBanner').innerHTML = d.armed
+    ? '<b>Armed.</b> Each Send on the Live desk is a real trade with real funds, inside the envelope.'
+    : '<b>Real trades, one press each.</b> Nothing trades by itself. Write an envelope, read it, then Arm. After a restart the desk is always disarmed.';
+  $('liveStatus').innerHTML = d.armed ? '<span class="good">&#10003; Armed</span>' : 'Disarmed';
+  $('liveLine').textContent = d.busy ? `Running: ${d.busy}` : env ? `Run ${env.run}` : 'No envelope yet';
+  const tile = (t, v, nt, go) => `<div class="tile${go ? ' link' : ''}"${go ? ` data-go="${go}" role="link" tabindex="0"` : ''}><div class="label">${esc(t)}</div><div class="value">${esc(v)}</div><div class="note">${esc(nt)}</div></div>`;
+  $('liveTiles').innerHTML =
+    tile('Size cap', env ? `${int(env.maxMinima)} MINIMA` : '-', env ? `and ${env.maxMxusd} MxUSD a trade` : 'Set by the envelope', 'maker:setup') +
+    tile('Trades today', env ? `${d.today} of ${env.tradesPerDay}` : '-', 'Counted once something is posted') +
+    tile('Route result', env ? signed(d.runPnl, 4) + ' MxUSD' : '-', env ? `Loss cap ${env.lossCap} MxUSD` : '') +
+    tile('Bot node', d.nodeProblem ? 'Not ready' : 'Ready', d.nodeProblem ? `${d.nodeProblem} Open Connections.` : 'Running and at the tip', 'connections#set-node') +
+    tile('Exchanges', Object.values(d.exchanges).filter((x) => x.connected).map((x) => x.name).join(', ') || 'None connected', 'Keys are set in Connections', 'connections#set-mexc') +
+    tile('Take when crossed', env ? (env.autoTake ? (d.armed ? 'On' : 'On when armed') : 'Off') : '-', env && env.autoTake ? (d.auto.note || `From ${env.crossPercent}% edge, every ${env.autoCooldown} s at most`) : 'Set in the envelope', 'maker:setup') +
+    tile('Taker', env && env.taker ? (d.armed ? 'On' : 'On when armed') : env ? 'Off' : '-', env && env.taker ? (d.taker.note || `${env.taker.side === 'buy' ? 'Asks' : 'Bids'} ${env.taker.side === 'buy' ? '≤' : '≥'} ${env.taker.limit} on ${(d.exchanges[env.taker.venue] || {}).name}, levels ≥ ${int(env.taker.minSize)}, within ${env.taker.maxGap}`) : 'Set in the envelope', 'maker:setup') +
+    tile('Desk', d.armed ? 'Armed' : 'Disarmed', 'Arm or disarm in Settings', 'settings#set-arm');
+  const blk = (b, btn) => `<div class="block-line"><span><b class="crit">Blocked${b.action === 'all' ? ', everything' : ''}:</b> ${esc(b.why)}</span>${btn ? `<button class="btn" type="button" data-release="${esc(b.id)}">Release</button>` : ''}</div>`;
+  $('liveBlocks').innerHTML = d.blocks.map((b) => blk(b, false)).join('');
+  $('armBlocks').innerHTML = d.blocks.map((b) => blk(b, true)).join('');
+  $('armLine').innerHTML = (d.armed ? '<span class="good">&#10003; Armed</span>' : 'Disarmed') + (env ? `, run ${esc(env.run)}` : ', no envelope yet');
+  $('btnArm').disabled = d.armed || !env;
+  $('btnDisarm').disabled = !d.armed;
+  drawTicket();
+  $('journalTable').innerHTML = d.journal.filter((e) => d.actions[e.kind]).length
+    ? '<tr><th>Time</th><th class="left">What</th><th class="left">State</th><th class="left">Detail</th><th>Result, MxUSD</th></tr>' + d.journal.filter((e) => d.actions[e.kind]).map((e) => {
+      const pv = e.preview || {}, bits = [];
+      if (pv.pool) bits.push(pv.pool.sellMinima ? `${num(pv.pool.minima, 2)} MINIMA for ${num(pv.pool.mxusd, 4)} MxUSD` : `${num(pv.pool.mxusd, 4)} MxUSD for ${num(pv.pool.minima, 2)} MINIMA`);
+      if (e.txpowid) bits.push(`txpow ${esc(e.txpowid.slice(0, 14))}...`);
+      if (e.exFill) bits.push(`${(d.exchanges[e.exOrder && e.exOrder.venue] || {}).name || 'Exchange'} ${num(e.exFill.executedQty, 2)} for ${num(e.exFill.quoteQty, 4)} USDT`);
+      if (e.note) bits.push(esc(e.note));
+      return `<tr><td>${clock(e.at, true)}</td><td class="left">${esc(e.label || e.kind)}</td><td class="left">${LIVE_WORD[e.status] || esc(e.status)}</td><td class="left">${bits.join('; ')}</td><td>${typeof e.pnl === 'number' ? signed(e.pnl, 4) : '-'}</td></tr>`;
+    }).join('')
+    : '<tr><td class="empty left">No trades yet.</td></tr>';
+}
+
+$('btnPreview').onclick = async (e) => {
+  lastPreview = null; $('previewTable').innerHTML = '';
+  const act = tkAction(); if (!act) return;
+  const body = { action: act, amount: $('l-amount').value.trim() };
+  if (tk.type === 'limit' && isEx(tk.venue)) body.limit = $('l-limit').value.trim();
+  const ok = await press(e.target, '/api/live/preview', body, 'Reading the venues...', 'Check it, then Send within 45 s.', 'tradeMsg', 'l-');
+  if (ok && state.preview) { lastPreview = { ...state.preview, shownAt: Date.now() }; drawPreview(lastPreview); delete state.preview; }
+  drawLive();
+};
+$('btnSend').onclick = async (e) => {
+  if (!lastPreview) return;
+  if (!confirm(`Send this real trade?\n\n${lastPreview.label}: ${$('l-amount').value.trim()} ${spends() ? 'MxUSD' : 'MINIMA'}`)) return;
+  const id = lastPreview.id; lastPreview = null;
+  await press(e.target, '/api/live/send', { previewId: id }, 'Sending...', 'Sent. Follow it in Trades below.', 'tradeMsg', 'l-');
+  drawLive();
+};
+$('btnArm').onclick = (e) => press(e.target, '/api/live/arm', {}, 'Arming...', 'Armed. Each Send is now a real trade.', 'armMsg', 'e-');
+$('btnDisarm').onclick = (e) => press(e.target, '/api/live/disarm', {}, 'Disarming...', 'Disarmed. A trade already running finishes its legs.', 'armMsg', 'e-');
+$('armBlocks').onclick = (e) => {
+  const id = e.target.dataset && e.target.dataset.release;
+  if (!id) return;
+  if (!confirm('Release this block? Only do so once you have checked the trade on chain or on MEXC and settled what is left.')) return;
+  press(e.target, '/api/live/release', { id }, 'Releasing...', 'Released.', 'armMsg', 'e-');
+};
+$('btnEnvelope').onclick = (e) => {
+  const body = Object.fromEntries([...ENV_FIELDS, ...ENV_AUTO, ...ENV_LADDER].map(([k]) => [k, $('e-' + k).value.trim()]));
+  body.autoTake = $('e-autoTake').checked;
+  body.taker = { on: $('e-takerOn').checked, venue: $('e-takerVenue').value, side: $('e-takerSide').value, limit: $('e-takerLimit').value.trim(), minSize: $('e-takerMinSize').value.trim(), maxGap: $('e-takerMaxGap').value.trim(), cooldown: $('e-takerCooldown').value.trim() };
+  body.shape = $('e-shape').value;
+  body.actions = [...$('envActions').querySelectorAll('input:checked')].map((x) => x.value);
+  press(e.target, '/api/live/envelope', body, 'Reading the bot wallet and MEXC, writing the envelope...', 'Written. Read ENVELOPE.md in the evidence folder, then Arm.', 'envMsg', 'e-');
+};
+
+document.querySelectorAll('nav button').forEach((b) => {
+  b.onclick = () => {
+    document.querySelectorAll('nav button').forEach((x) => x.setAttribute('aria-selected', x === b));
+    document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('on', t.id === 'tab-' + b.dataset.tab));
+    try { localStorage.setItem('tab', b.dataset.tab); } catch {}
+    if (b.dataset.tab === 'maker' && typeof showMm === 'function') { mmView = mmLanding(); showMm(); }
+    redraw();
+  };
+});
+document.querySelectorAll('#range button').forEach((b) => {
+  b.onclick = () => {
+    document.querySelectorAll('#range button').forEach((x) => x.setAttribute('aria-pressed', x === b));
+    rangeHours = Number(b.dataset.h);
+    drawHistory();
+  };
+});
+
+function redraw() {
+  if (!state) return;
+  applyMode();
+  setTimeout(addHelp, 0);
+  drawPills(); drawSnapshot(); drawMaker(); drawMexc(); drawNode(); drawLive(); drawBooks(); drawHistory();
+}
+
+async function poll() {
+  try {
+    const j = await (await fetch('/api/state')).json();
+    const scanned = j.snapshot && j.snapshot.at !== lastScanAt;
+    state = j;
+    if (scanned) {
+      lastScanAt = j.snapshot.at;
+      history = await (await fetch('/api/history')).json();
+      redraw();
+    } else { applyMode(); drawPills(); drawMaker(); drawMexc(); drawNode(); drawLive(); }
+  } catch {
+    $('pills').innerHTML = '<span class="pill crit"><b>&#10005; Local server not answering</b>: start it with node tools/server.mjs</span>';
+  }
+}
+
+let resizeTimer;
+addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(redraw, 150); });
+try { const t = localStorage.getItem('tab'); if (t) { const b = document.querySelector(`nav button[data-tab="${t}"]`); if (b) b.click(); } } catch {}
+poll();
+setInterval(poll, 5000);
+</script>
+</body>
+</html>

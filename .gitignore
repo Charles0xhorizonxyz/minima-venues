@@ -1,0 +1,8 @@
+# Personal and live data stays on this computer: scan history, the desk's journal and state, settings, paper maker,
+# and each live run's evidence (wallet address, balances, results). Exchange keys are never in this folder at all
+# (they are encrypted under %LOCALAPPDATA%\Trading).
+data/
+evidence/
+
+*.tmp
+node_modules/
