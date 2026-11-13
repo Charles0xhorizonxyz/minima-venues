@@ -18,6 +18,14 @@ import { createMexc, publicDepth as mexcDepth } from './mexc.mjs';
 import { createXt, xtDepth } from './xt.mjs';
 import { createNode } from './node.mjs';
 import { createDesk } from './desk.mjs';
+import { candles, INTERVALS } from './candles.mjs';
+import { createParlons } from './parlons.mjs';
+import { secrets, secretDir } from './secrets.mjs';
+import { createBay } from './bay.mjs';
+import { createPilot } from './pilot.mjs';
+import { execFileSync, spawn as spawnChild } from 'node:child_process';
+import os from 'node:os';
+const pilot = createPilot(path.join(path.dirname(new URL(import.meta.url).pathname.replace(/^\/(\w:)/, '$1')), '..', 'data', 'pilot.json'));
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
@@ -39,8 +47,49 @@ try { settings = { ...settings, ...JSON.parse(fs.readFileSync(SETTINGS_FILE, 'ut
 if (settings.mode !== 'paper' && maker.view().running) maker.stop();   // the paper maker runs only in paper mode
 const scan = { ok: false, error: null, lastAt: null, nextAt: Date.now(), running: false };
 setRelays(settings.relays);
+// Minima Bay (paper mode): The Rapids and The Pool, with test tokens, through the app's own node.
+const bay = createBay({ root: ROOT, rpc: () => node.rpc(), secretDir, mode: () => settings.mode });
+let bayBusy = false;
+const bayTick = async () => { if (bayBusy) return; bayBusy = true; try { await bay.refresh(); } catch { /* shown in its view */ } finally { bayBusy = false; } };
+setInterval(bayTick, 10000); setTimeout(bayTick, 3000);
 let latest = null;
 let history = [];
+let parlonsStop = false;   // the last disarm came from a Parlons "stop": not an alert
+const deskRef = {};
+const parlons = createParlons({
+  file: path.join(ROOT, 'data', 'parlons.json'), call: (cmd, t) => node.maxima(cmd, t), port: PORT,
+  actions: {
+    status: () => {
+      const d = desk.view(latestMid()), n = node.view(), mx = latest?.venues?.MEXC;
+      return [`Mode: ${settings.mode}. Desk: ${d.armed ? 'ARMED' : 'disarmed'}${d.envelope ? `, run ${d.run}` : ', no envelope'}${d.blocks.length ? `, ${d.blocks.length} block(s)` : ''}, ${d.today} trade(s) today.`,
+        `Node: ${n.phase}${n.live ? `, block ${n.live.tip}, ${n.live.tipAge} s old` : ''}.`,
+        `MEXC ${mx?.bid ?? '-'} / ${mx?.ask ?? '-'}. Maker: ${maker.view().running ? 'running on paper' : 'stopped'}. Scans: ${scan.ok ? 'ok' : scan.error || 'starting'}.`].join(' ');
+    },
+    price: () => {
+      const v = latest?.venues; if (!v) return 'No scan yet.';
+      const mid = (x) => (x?.bid && x?.ask ? ((x.bid + x.ask) / 2).toFixed(6) : '-');
+      const NM = { FAST: 'Dexicon', POOL: 'PandaPools', MEXC: 'MEXC', XT: 'XT' };
+      const r = (latest.routes || []).filter((x) => x.qty > 0).sort((a, b) => b.afterRisk - a.afterRisk)[0];
+      return `Mids: MEXC ${mid(v.MEXC)}, XT ${mid(v.XT)}, Dexicon ${mid(v.FAST)}, PandaPools ${mid(v.POOL)}.${r ? ` Best route: buy ${NM[r.buy]}, sell ${NM[r.sell]}, ${Math.round(r.qty)} MINIMA, ${r.afterRisk.toFixed(3)} MxUSD after time risk.` : ''}`;
+    },
+    stop: () => {
+      parlonsStop = true; desk.disarm('stopped from Parlons');
+      const m = maker.view().running ? (maker.stop(), ' The paper maker is stopped.') : '';
+      return `Stopped: automatic trading is off (the desk is disarmed).${m} Your own trades from the page still work in live mode.`;
+    },
+    cannotArm: () => {
+      const d = desk.view(latestMid());
+      if (settings.mode === 'paper') return 'the app is in paper mode.';
+      if (!d.envelope) return 'no envelope is written.';
+      if (d.armed) return 'it is already armed.';
+      if (d.blocks.length) return 'something is blocked: release it in Settings first.';
+      return null;
+    },
+    locked: () => secrets.view().locked && (mexc.hasStoredKey() || xt.hasStoredKey()),
+    unlock: async (pass) => { const r = await unlockVault(pass); return r.error ? `Not unlocked: ${r.error}` : 'Unlocked: the exchange keys are readable again. Delete the message with the passphrase from this chat.'; },
+    arm: () => { const r = desk.arm(); if (r.error) return `Not armed: ${r.error}`; parlonsStop = false; return 'ARMED: automatic trading is on inside the envelope. Send "stop" to turn it off.'; },
+  },
+});
 const desk = createDesk({ root: ROOT, node, clients: { mexc, xt }, depths: { mexc: mexcDepth, xt: xtDepth }, timing: () => latest?.timing, isPaper: () => settings.mode === 'paper' });
 
 try {
@@ -52,7 +101,7 @@ try {
   history = history.slice(-MAX_HISTORY);
 } catch { /* first run */ }
 
-// Small on purpose: this laptop's disk is nearly full.
+// Small on purpose: this computer's disk is nearly full.
 /* How long a route takes, and what the price can do meanwhile. Time is the block time times the confirmations waited for;
  * the risk is one standard deviation of the MEXC price over that time, on the MINIMA carried. */
 function volatility() {
@@ -99,7 +148,7 @@ async function runScan() {
     let s;
     try { s = await snapshot({ books: true }); }
     catch (e) {
-      // The shared node is down (after a reboot it may not be up yet): read from the bot's own node instead,
+      // The shared node is down (after a reboot it may not be up yet): read from its own node instead,
       // when it runs. Reads only, as always.
       if (!node.view().live) await node.refresh().catch(() => {});
       const own = node.view().live;
@@ -118,9 +167,11 @@ async function runScan() {
     scan.ok = true; scan.error = null; scan.lastAt = Date.now();
     maker.tick(s);
     desk.onScan(s).catch(() => {});   // take when crossed, if the armed envelope allows it
+    parlonsWatch();
   } catch (e) {
     scan.ok = false; scan.error = e.message;
     maker.tick(null);
+    parlonsWatch();
   }
   await mexc.sync().catch(() => {});
   await xt.sync().catch(() => {});
@@ -133,8 +184,10 @@ async function runScan() {
 function trimBooks() {
   if (!latest) return null;
   const v = latest.venues.MEXC, mid = v.bid && v.ask ? (v.bid + v.ask) / 2 : null;
-  const near = (rows) => (mid ? rows.filter((r) => Math.abs(r.price / mid - 1) <= DEPTH_BAND) : rows).slice(0, MAX_ROWS);
-  return Object.fromEntries(Object.entries(latest.books).map(([k, b]) => [k, { asks: near(b.asks), bids: near(b.bids) }]));
+  // Near the market, plus every level that holds one of your open orders on that exchange, however far out.
+  const mine = { MEXC: mexc.view(mid)?.openOrders || [], XT: xt.view()?.openOrders || [] };
+  const near = (k, rows) => { const own = new Set((mine[k] || []).map((o) => Number(o.price).toFixed(8))); return (mid ? rows.filter((r) => Math.abs(r.price / mid - 1) <= DEPTH_BAND || own.has(Number(r.price).toFixed(8))) : rows).slice(0, MAX_ROWS); };
+  return Object.fromEntries(Object.entries(latest.books).map(([k, b]) => [k, { asks: near(k, b.asks), bids: near(k, b.bids) }]));
 }
 
 function latestMid() { const v = latest?.venues.MEXC; return v?.bid && v?.ask ? (v.bid + v.ask) / 2 : null; }
@@ -180,7 +233,7 @@ function setSettings(body) {
   return { ok: true };
 }
 
-/* The chain tip, followed between scans: from the bot's own node every 5 s once it runs and is in sync, otherwise from
+/* The chain tip, followed between scans: from its own node every 5 s once it runs and is in sync, otherwise from
  * the shared read node every 30 s (the handshake: shared nodes are polled no faster than that). One command only: block. */
 const TIP_OWN_MS = 5000, TIP_SHARED_MS = 30000;
 const tipNow = { block: null, timemilli: null, source: null, readAt: null, error: null };
@@ -199,7 +252,7 @@ async function followTip() {
   const url = useOwn ? node.rpc() : defaultRpc();
   try {
     const b = await readBlock(url);
-    Object.assign(tipNow, { block: Number(b.block), timemilli: Number(b.timemilli), source: useOwn ? 'bot node' : 'shared node', readAt: Date.now(), error: null });
+    Object.assign(tipNow, { block: Number(b.block), timemilli: Number(b.timemilli), source: useOwn ? 'node' : 'shared node', readAt: Date.now(), error: null });
   } catch (e) { tipNow.error = e.message; }
   setTimeout(followTip, useOwn ? TIP_OWN_MS : TIP_SHARED_MS);
 }
@@ -217,9 +270,56 @@ function keepBooks(s) {
   }
 }
 
+// The MEXC mid about 24 hours ago, from the scan log (the first scan in the hour after that time).
+function mid24h() {
+  const t0 = Date.now() - 86400000, r = history.find((h) => h.t >= t0 && h.t < t0 + 3600000 && h.v?.MEXC?.[0] && h.v?.MEXC?.[1]);
+  return r ? (r.v.MEXC[0] + r.v.MEXC[1]) / 2 : null;
+}
+// Several levels at once: each is an alert above or below, from where the mid is now.
+function addLevels(text) {
+  const mid = latestMid(), list = String(text ?? '').split(/[\s,;]+/).filter(Boolean);
+  if (!list.length) return { error: 'Type one or more prices, like 0.0028, 0.0030, 0.0032.', field: 'pLevels' };
+  if (!(mid > 0)) return { error: 'No MEXC price yet: wait for a scan.' };
+  for (const p of list) { const r = parlons.addPrice(Number(p) >= mid ? 'above' : 'below', p); if (r.error) return r; }
+  return { ok: true };
+}
+// The key store (a server's passphrase vault): unlocking reads the exchange keys again.
+async function unlockVault(pass) {
+  const r = await secrets.unlock(pass);
+  if (r.error) return r;
+  await mexc.reloadKey(); await xt.reloadKey();
+  mexc.sync().catch(() => {}); xt.sync().catch(() => {});
+  return { ok: true };
+}
+async function setupVault(pass) { const r = await secrets.setup(pass); return r; }
+// This app's version: the VERSION file a server install writes, or here the git commit (+local when changed since).
+function appVersion() {
+  try { return fs.readFileSync(path.join(ROOT, 'VERSION'), 'utf8').trim(); } catch { /* not an install */ }
+  try {
+    const h = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: ROOT, windowsHide: true }).toString().trim();
+    const dirty = execFileSync('git', ['status', '--porcelain', '--untracked-files=no'], { cwd: ROOT, windowsHide: true }).toString().trim();
+    return h + (dirty ? '+local' : '');
+  } catch { return 'unknown'; }
+}
+// The program sent to a server: tools, dashboard, vendor, the licence and README, and its VERSION (never data/ or keys).
+function appArchive() {
+  const v = appVersion(), tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mv-pack-'));
+  fs.writeFileSync(path.join(tmp, 'VERSION'), v + '\n');
+  const tar = process.platform === 'win32' ? 'C:\\Windows\\System32\\tar.exe' : 'tar', out = tmp + '.tgz';
+  return new Promise((resolve, reject) => {
+    const child = spawnChild(tar, ['-czf', out, '-C', ROOT, 'tools', 'dashboard', 'vendor', 'LICENSE', 'README.md', '-C', tmp, 'VERSION'], { windowsHide: true, stdio: 'ignore' });
+    child.on('close', (code) => { fs.rmSync(tmp, { recursive: true, force: true }); code === 0 ? resolve(out) : reject(new Error('The app could not be packed.')); });
+    child.on('error', reject);
+  });
+}
+const pilotView = () => ({ ...pilot.view(), laptopVersion: appVersion() });
+function parlonsWatch() {
+  parlons.watch({ scan, snapshot: latest, desk: desk.view(latestMid()), node: node.view(), ownStop: () => parlonsStop, mid24: mid24h() }).catch(() => {});
+}
+
 function stateJson() {
   return {
-    now: Date.now(), tip: tipNow, scan, scanSeconds: SCAN_SECONDS, historyCount: history.length, maker: maker.view(), mexc: mexc.view(latestMid()), xt: xt.view(), node: node.view(), settings, desk: desk.view(latestMid()),
+    now: Date.now(), tip: tipNow, scan, scanSeconds: SCAN_SECONDS, historyCount: history.length, maker: maker.view(), mexc: mexc.view(latestMid()), xt: xt.view(), node: node.view(), settings, desk: desk.view(latestMid()), parlons: parlons.view(), vault: secrets.view(), platform: process.platform, version: appVersion(), pilot: pilotView(), bay: bay.view(),
     snapshot: latest && { at: latest.at, tip: latest.tip, tipAge: latest.tipAge, timing: latest.timing, venues: latest.venues, routes: latest.routes, detail: latest.detail, books: trimBooks(), staleBooks: latest.staleBooks || {} },
   };
 }
@@ -245,6 +345,13 @@ const server = http.createServer(async (req, res) => {
   if (!HOSTS.has(req.headers.host)) return send(res, 403, { ok: false, error: 'wrong host' });
   const url = new URL(req.url, `http://${req.headers.host}`);
 
+  if (req.method === 'GET' && pilot.active() && url.pathname.startsWith('/api/')) {
+    if (url.pathname === '/api/state') {
+      try { const r = await pilot.remoteState(); if (r) return send(res, 200, { ...r, pilot: pilotView(), remote: true }); } catch (e) { /* below */ }
+      return send(res, 200, { ...stateJson(), remote: false, remoteError: 'The server is not reachable: this page shows this computer until the tunnel is back.' });
+    }
+    return pilot.forward(req, res);
+  }
   if (req.method === 'GET') {
     try {
       if (url.pathname === '/') return send(res, 200, fs.readFileSync(PAGE), 'text/html; charset=utf-8');
@@ -252,7 +359,25 @@ const server = http.createServer(async (req, res) => {
       if (url.pathname === '/api/state') return send(res, 200, stateJson());
     } catch (e) { return send(res, 500, { ok: false, error: e.message }); }
     if (url.pathname === '/api/history') return send(res, 200, history);
+    if (url.pathname === '/api/bay/candles') {
+      const iv = INTERVALS[String(url.searchParams.get('interval'))], venue = url.searchParams.get('venue') === 'POOL' ? 'POOL' : 'RAPIDS';
+      const r = !iv ? { error: 'Unknown interval.' } : { candles: bay.candles(String(url.searchParams.get('market')), venue, iv.ms), source: `${venue === 'POOL' ? "The Pool's" : "The Rapids'"} mid price, read by this app once a minute` };
+      return send(res, r.error ? 400 : 200, r.error ? { ok: false, ...r } : r);
+    }
+    if (url.pathname === '/api/candles') {
+      const r = await candles(String(url.searchParams.get('venue')), String(url.searchParams.get('interval')), history).catch((e) => ({ error: e.message }));
+      return send(res, r.error ? 400 : 200, r.error ? { ok: false, ...r } : r);
+    }
     return send(res, 404, { ok: false, error: 'not found' });
+  }
+
+  // The node's webhook: a secret path, from this computer only. Only the paired Parlons key is acted on.
+  if (req.method === 'POST' && url.pathname.startsWith('/api/hook/')) {
+    const ok = url.pathname === `/api/hook/${parlons.token()}` && req.socket.remoteAddress && /^(::ffff:)?127\.0\.0\.1$|^::1$/.test(req.socket.remoteAddress);
+    if (!ok) return send(res, 404, { ok: false, error: 'not found' });
+    let ev; try { ev = await readBody(req); } catch { return send(res, 400, 'bad'); }
+    parlons.onEvent(ev).catch(() => {});
+    return send(res, 200, 'ok', 'text/plain');
   }
 
   if (req.method === 'POST') {
@@ -260,7 +385,26 @@ const server = http.createServer(async (req, res) => {
     if (!sameSite) return send(res, 403, { ok: false, error: 'refused' });
     let body;
     try { body = await readBody(req); } catch (e) { return send(res, 400, { ok: false, error: e.message }); }
+    const pilotCalls = {
+      '/api/pilot/key': async () => ({ publicKey: await pilot.publicKey() }),
+      '/api/pilot/add': () => pilot.add(body),
+      '/api/pilot/remove': () => pilot.remove(String(body.id)),
+      '/api/pilot/rename': () => pilot.rename(String(body.id), body.name),
+      '/api/pilot/connect': () => pilot.connect(String(body.id)),
+      '/api/pilot/disconnect': () => pilot.disconnect(),
+      '/api/pilot/check': () => pilot.check(String(body.id)),
+      '/api/pilot/install': () => pilot.install(String(body.id), { password: String(body.password || ''), app: appArchive, jar: node.view().config.jarPath, setup: body.setup === true, startNode: body.startNode === true }),
+    };
+    if (pilotCalls[url.pathname]) {
+      let r; try { r = await pilotCalls[url.pathname](); } catch (e) { r = { error: e.message }; }
+      return send(res, r.error ? 400 : 200, r.error ? { ok: false, ...r, pilot: pilotView() } : { ...r, ok: true, pilot: pilotView() });
+    }
+    if (pilot.active()) return pilot.forward(req, res, JSON.stringify(body));
     const actions = {
+      '/api/bay/order': () => bay.order(body),
+      '/api/bay/cancel': () => bay.cancel(body),
+      '/api/bay/deposit': () => bay.deposit(body),
+      '/api/bay/address': () => bay.address(),
       '/api/mm/config': () => maker.setConfig(body.config),
       '/api/mm/start': () => (settings.mode === 'paper' ? maker.start(body.config) : { error: 'The paper maker runs only in paper mode. Switch to paper in Settings.' }),
       '/api/mm/stop': () => maker.stop(),
@@ -276,13 +420,24 @@ const server = http.createServer(async (req, res) => {
       '/api/node/start': () => node.start(body.config),
       '/api/node/stop': () => node.stop(),
       '/api/node/peer': () => node.addPeer(body),
+      '/api/vault/setup': () => setupVault(body.passphrase),
+      '/api/vault/unlock': () => unlockVault(body.passphrase),
+      '/api/vault/lock': () => secrets.lock(),
+      '/api/parlons/pair': () => parlons.pair(body),
+      '/api/parlons/unpair': () => parlons.unpair(),
+      '/api/parlons/test': () => parlons.test(),
+      '/api/parlons/alerts': () => parlons.setAlerts(body),
+      '/api/parlons/price': () => (body.remove ? parlons.removePrice(String(body.remove)) : body.levels !== undefined ? addLevels(body.levels) : parlons.addPrice(String(body.dir), String(body.price).trim())),
       '/api/node/resync': () => (desk.armed() ? { error: 'Disarm the desk in Settings first: a trade must never wait on a node that is rebuilding its chain.' } : node.resync(body)),
       '/api/live/envelope': () => desk.writeEnvelope(body),
-      '/api/live/arm': () => desk.arm(),
-      '/api/live/disarm': () => desk.disarm(),
+      '/api/live/arm': () => { const r = desk.arm(); if (!r.error) parlonsStop = false; return r; },
+      '/api/live/disarm': () => { parlonsStop = true; return desk.disarm(); },
       '/api/live/release': () => desk.release(body),
       '/api/live/preview': () => desk.preview(body),
       '/api/live/send': () => desk.send(body),
+      '/api/live/cancel': () => desk.cancelOrder(body),
+      '/api/live/modify': () => desk.modifyOrder(body),
+      '/api/live/rest': () => desk.restOrder(body),
     };
     const act = actions[url.pathname];
     if (!act) return send(res, 404, { ok: false, error: 'not found' });
@@ -297,8 +452,16 @@ server.listen(PORT, '127.0.0.1', () => {
   console.log(`Dashboard: http://127.0.0.1:${PORT}`);
   mexc.loadKey();
   xt.loadKey();
-  node.refresh();
+  node.refresh().then(() => {
+    // A server that rebooted starts its node again, when that is set.
+    const v = node.view();
+    if (v.config.autoStart && !v.watching && v.phase === 'stopped') node.start(v.config).then((r) => console.log(r.error ? `Node autostart: ${r.error}` : 'Node autostart: starting')).catch(() => {});
+  });
   setInterval(() => node.refresh(), 15000);
+  setTimeout(() => parlons.ensureHook(), 20000);
+  pilot.resume().catch(() => {});
+  setInterval(() => parlons.ensureHook(), 300000);
+  setInterval(parlonsWatch, 30000);
   runScan();
   setTimeout(followTip, 3000);
   // A heartbeat in data/server.log: any moment this server was held up over 2 s (a busy machine, a stuck call), and one

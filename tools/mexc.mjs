@@ -9,7 +9,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFile } from 'node:child_process';
+import { secrets, secretDir } from './secrets.mjs';
 
 const SYMBOL = 'MINIMAUSDT', BASE_ASSET = 'MINIMA', QUOTE_ASSET = 'USDT';
 const CALLS = new Set(['GET /api/v3/account', 'GET /api/v3/myTrades', 'POST /api/v3/order', 'GET /api/v3/order', 'DELETE /api/v3/order', 'GET /api/v3/openOrders']);
@@ -22,21 +22,8 @@ const DAY = 86400000, FIRST_LOOKBACK = 30 * DAY, OVERLAP = 3600000, PAGE = 100;
 const envBase = process.env.MEXC_BASE;
 const BASE = envBase && /^http:\/\/127\.0\.0\.1:\d+$/.test(envBase) ? envBase : 'https://api.mexc.com';
 
-const SECRET_DIR = path.join(process.env.LOCALAPPDATA || '.', process.env.TRADING_SECRET_DIR || 'Trading');
+const SECRET_DIR = secretDir();
 const SECRET_FILE = path.join(SECRET_DIR, 'mexc.dpapi');
-
-function powershell(script, input) {
-  return new Promise((resolve, reject) => {
-    const child = execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], { windowsHide: true, maxBuffer: 1 << 20 }, (err, out) => {
-      if (err) reject(new Error('Windows could not protect or read the key.')); else resolve(String(out).trim());
-    });
-    child.stdin.end(input, 'utf8');
-  });
-}
-const protect = (text) => powershell(
-  'Add-Type -AssemblyName System.Security; $s=[Console]::In.ReadToEnd(); $b=[Security.Cryptography.ProtectedData]::Protect([Text.Encoding]::UTF8.GetBytes($s),$null,"CurrentUser"); [Console]::Out.Write([Convert]::ToBase64String($b))', text);
-const unprotect = (b64) => powershell(
-  'Add-Type -AssemblyName System.Security; $s=[Console]::In.ReadToEnd().Trim(); $b=[Security.Cryptography.ProtectedData]::Unprotect([Convert]::FromBase64String($s),$null,"CurrentUser"); [Console]::Out.Write([Text.Encoding]::UTF8.GetString($b))', b64);
 
 /* A 4xx answer with an error code is a refusal (e.refused): MEXC did not act. Anything else that is not a clear answer
  * (no reply, a timeout, a 5xx) may have been acted on, and is marked so (e.unclear). */
@@ -107,16 +94,22 @@ export function createMexc(ledgerFile) {
     }
   } catch { /* first run */ }
 
+  // A locked key store (a server after a restart) is tried again once it is unlocked: see reloadKey.
   async function loadKey() {
     if (keyLoaded) return;
     keyLoaded = true;
     try {
       const blob = fs.readFileSync(SECRET_FILE, 'utf8').trim();
       if (!blob) return;
-      key = JSON.parse(await unprotect(blob));
-      info.connected = true; info.keyEnd = key.apiKey.slice(-4);
-    } catch (e) { if (e.code !== 'ENOENT') info.error = 'The stored key could not be read. Connect it again.'; }
+      key = JSON.parse(await secrets.unprotect(blob));
+      info.connected = true; info.keyEnd = key.apiKey.slice(-4); info.locked = false; info.error = null;
+    } catch (e) {
+      if (e.locked) { keyLoaded = false; info.locked = true; info.error = 'The key store is locked: unlock it in Connections.'; }
+      else if (e.code !== 'ENOENT') info.error = 'The stored key could not be read. Connect it again.';
+    }
   }
+  const reloadKey = () => { keyLoaded = false; return loadKey(); };
+  const hasStoredKey = () => { try { return fs.readFileSync(SECRET_FILE, 'utf8').trim().length > 0; } catch { return false; } };
 
   async function readAccount(k) {
     const a = await signedGet(k, '/api/v3/account');
@@ -143,7 +136,7 @@ export function createMexc(ledgerFile) {
       Object.assign(info, await readAccount(key));
       // What rests on MEXC now, from this desk (client ids tb...) or anything else using the account.
       const open = await signedGet(key, '/api/v3/openOrders', { symbol: SYMBOL });
-      info.openOrders = (Array.isArray(open) ? open : []).map((o) => ({ side: o.side === 'BUY' ? 'buy' : 'sell', price: Number(o.price), qty: Number(o.origQty) - Number(o.executedQty || 0), filled: Number(o.executedQty || 0), time: Number(o.time), ours: String(o.clientOrderId ?? '').startsWith('tb') }));
+      info.openOrders = (Array.isArray(open) ? open : []).map((o) => ({ side: o.side === 'BUY' ? 'buy' : 'sell', price: Number(o.price), qty: Number(o.origQty) - Number(o.executedQty || 0), filled: Number(o.executedQty || 0), time: Number(o.time), ours: String(o.clientOrderId ?? '').startsWith('tb'), id: String(o.orderId ?? '') }));
       info.openOrdersAt = Date.now();
       // The account's own trade history is no longer read: the desk counts only its own trades, from its journal.
       info.error = null; info.lastSyncAt = Date.now();
@@ -159,9 +152,9 @@ export function createMexc(ledgerFile) {
     let account;
     try { account = await readAccount(candidate); } catch (e) { return { error: `Not saved. ${e.message}` }; }
     let blob;
-    try { blob = await protect(JSON.stringify(candidate)); } catch (e) { return { error: e.message }; }
+    try { blob = await secrets.protect(JSON.stringify(candidate)); } catch (e) { return { error: e.message }; }
     fs.mkdirSync(SECRET_DIR, { recursive: true });
-    fs.writeFileSync(SECRET_FILE, blob);
+    fs.writeFileSync(SECRET_FILE, blob, { mode: 0o600 });
     key = candidate; keyLoaded = true;
     Object.assign(info, account, { connected: true, keyEnd: apiKey.slice(-4), error: null });
     sync();
@@ -228,6 +221,49 @@ export function createMexc(ledgerFile) {
     return { done: true, status: o.status, executedQty: String(o.executedQty ?? '0'), quoteQty: String(o.cummulativeQuoteQty ?? '0'), orderId: o.orderId ?? orderId, clientId };
   }
 
+  /* Cancel one open order by its id, then read it back: only an ended order counts as cancelled. */
+  async function cancelOrder({ orderId }) {
+    await loadKey();
+    if (!key) return { refused: true, why: 'no MEXC key is connected' };
+    if (!/^[A-Za-z0-9_-]{1,40}$/.test(String(orderId))) return { refused: true, why: 'that is not an order id' };
+    const ask = () => signed(key, 'GET', '/api/v3/order', { symbol: SYMBOL, orderId });
+    let refusal = null;
+    try { await signed(key, 'DELETE', '/api/v3/order', { symbol: SYMBOL, orderId }); } catch (e) { if (e.refused) refusal = e.message; }
+    for (let i = 0; i < 5; i++) {
+      await sleep(i ? 1000 : 400);
+      try { const o = await ask(); if (ENDED.includes(o?.status)) { sync(); return { done: true, status: o.status, executedQty: String(o.executedQty ?? '0'), origQty: String(o.origQty ?? '0') }; } } catch { /* again */ }
+    }
+    return refusal ? { refused: true, why: refusal } : { unknown: true, why: 'the cancel was sent and the order could not be read back as ended' };
+  }
+
+  /* A post-only order that rests on the book (LIMIT_MAKER): MEXC rejects it rather than let it trade at once. */
+  async function restingOrder({ side, quantity, price, clientId }) {
+    await loadKey();
+    if (!key) return { refused: true, why: 'no MEXC key is connected' };
+    if (info.canTrade === false) return { refused: true, why: 'this MEXC key cannot trade' };
+    if (!/^(BUY|SELL)$/.test(side) || !QTY.test(quantity) || !PRICE.test(price) || !CLIENT_ID.test(clientId) || !(Number(quantity) > 0) || !(Number(price) > 0)) return { refused: true, why: 'the order is not well formed' };
+    const ask = () => signed(key, 'GET', '/api/v3/order', { symbol: SYMBOL, origClientOrderId: clientId });
+    let orderId = null;
+    try { orderId = (await signed(key, 'POST', '/api/v3/order', { symbol: SYMBOL, side, type: 'LIMIT_MAKER', quantity, price, newClientOrderId: clientId }))?.orderId ?? null; }
+    catch (e) {
+      if (e.refused) return { refused: true, why: e.message };
+      for (let i = 0; i < 4 && !orderId; i++) { await sleep(2500); try { orderId = (await ask())?.orderId ?? null; } catch { /* not there yet */ } }
+      if (!orderId) return { unknown: true, why: `${e.message}, and no order named ${clientId} could be found` };
+    }
+    let o = null;
+    for (let i = 0; i < 4 && !o; i++) { await sleep(1000); try { o = await ask(); } catch { /* again */ } }
+    sync();
+    if (!o) return { unknown: true, why: `order ${clientId} was placed and could not be read back`, orderId };
+    if (['CANCELED', 'REJECTED'].includes(o.status) && !(Number(o.executedQty) > 0)) return { refused: true, why: 'MEXC did not keep it: at that price it would have traded at once (post-only)' };
+    return { done: true, status: o.status, executedQty: String(o.executedQty ?? '0'), orderId: o.orderId ?? orderId, clientId };
+  }
+
+  async function orderStatus(clientId) {
+    await loadKey(); if (!key || !CLIENT_ID.test(String(clientId))) return null;
+    const o = await signed(key, 'GET', '/api/v3/order', { symbol: SYMBOL, origClientOrderId: clientId });
+    return o ? { status: o.status, executedQty: String(o.executedQty ?? '0'), quoteQty: String(o.cummulativeQuoteQty ?? '0') } : null;
+  }
+
   async function balances() {
     await loadKey();
     if (!key) return null;
@@ -236,5 +272,5 @@ export function createMexc(ledgerFile) {
     return a.balances;
   }
 
-  return { sync, connect, disconnect, view, loadKey, limitOrder, balances, connected: () => !!key };
+  return { reloadKey, hasStoredKey, sync, connect, disconnect, view, loadKey, limitOrder, cancelOrder, restingOrder, orderStatus, balances, connected: () => !!key };
 }

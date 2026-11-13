@@ -4,14 +4,15 @@
  * This file cannot trade: it holds no key, reaches no node and no relay, and only ever reads the snapshot it is handed.
  * A real maker needs its own node, wallet and envelope (docs/HANDSHAKE.md, rules 1 to 3) and is a separate piece of work.
  *
- * How a paper rung fills: only when a real price elsewhere goes through it (a MEXC or pool bid above your ask, a MEXC or
- * pool ask under your bid), and only for the depth that is there. The pool can fill you once per state of its reserves.
+ * How a paper rung fills: only when a real price elsewhere goes through it (a bid above your ask, an ask under your bid, on
+ * one of the venues ticked: MEXC, XT.com, Dexicon, PandaPools, The Pool, The Rapids), and only for the depth that is
+ * there. The pool can fill you once per state of its reserves.
  * It is a model. Real takers may be slower, and may never come.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 
-const MAX_LEVELS = 6, FRESH_MS = 5 * 60000, WIDEN_FULL_MS = 90 * 60000, MAX_WIDEN = 10, HARD_STALE_MS = 12 * 3600000;
+const MAX_LEVELS = 25, FRESH_MS = 5 * 60000, WIDEN_FULL_MS = 90 * 60000, MAX_WIDEN = 10, HARD_STALE_MS = 12 * 3600000;
 const JUMP = 0.03, CONFIRM_BAND = 0.01, CONFIRM_MS = 60000;
 const MAX_FILLS = 500, MAX_SERIES = 10080, MIN_FILL = 1;
 
@@ -19,11 +20,14 @@ const MAX_FILLS = 500, MAX_SERIES = 10080, MIN_FILL = 1;
  * the mid, so the step is the ladder's slope; the shape spreads the sizes over the rungs, the average staying the size set:
  * flat (the same on every rung), grow (more further out), curve (more near the mid). */
 export const SHAPES = ['flat', 'grow', 'curve'];
-export function shapeWeights(shape, n) {
-  const w = Array.from({ length: n }, (_, d) => (shape === 'grow' ? d + 1 : shape === 'curve' ? n - d : 1));
-  const sum = w.reduce((a, b) => a + b, 0);
-  return w.map((x) => (x * n) / sum);
+export function shapeWeights(shape, n, tilt) {
+  const norm = (w) => { const sum = w.reduce((a, b) => a + b, 0); return w.map((x) => (x * n) / sum); };
+  const grow = norm(Array.from({ length: n }, (_, d) => d + 1)), curve = norm(Array.from({ length: n }, (_, d) => n - d));
+  // A continuous shape: -1 is grow (Bid-Ask), 0 flat (Spot), +1 curve; in between, a blend (the average stays 1).
+  const t = Number.isFinite(tilt) ? Math.max(-1, Math.min(1, tilt)) : shape === 'grow' ? -1 : shape === 'curve' ? 1 : 0;
+  return Array.from({ length: n }, (_, d) => (t < 0 ? (1 + t) + -t * grow[d] : (1 - t) + t * curve[d]));
 }
+export const tiltName = (t) => (t <= -0.5 ? 'grow' : t >= 0.5 ? 'curve' : 'flat');
 export const DEFAULTS = { skew: 0, spread: 0.5, step: 0.5, levels: 3, shape: 'flat', askSize: 5000, bidSize: 5000, reprice: 0.5, cooldownSeconds: 300, settleBlocks: 1, startMinima: 50000, startMxusd: 150 };
 const LIMITS = {
   skew: [-20, 20, 'Skew'], spread: [0.1, 20, 'First rung'], step: [0, 20, 'Step'], levels: [1, MAX_LEVELS, 'Levels'], askSize: [0, 1e9, 'Ask size'], bidSize: [0, 1e9, 'Bid size'],
@@ -33,6 +37,9 @@ const LIMITS = {
 const up8 = (x) => Math.ceil(x * 1e8 - 1e-6) / 1e8;
 const down8 = (x) => Math.floor(x * 1e8 + 1e-6) / 1e8;
 
+// Minima Bay's The Pool (BAYPOOL) and The Rapids (RAPIDS) are choices too: they fill only from a MINIMA/MxUSD book, so
+// while they trade test assets only they fill nothing (tools/scan.mjs gives them an empty book, never a test pair's).
+export const MM_VENUES = ['MEXC', 'XT', 'FAST', 'POOL', 'BAYPOOL', 'RAPIDS'];
 export function validate(input) {
   const config = {};
   // Before the first rung had its own setting it sat one step out: keep that ladder when none is given.
@@ -49,6 +56,25 @@ export function validate(input) {
   const shape = String(input?.shape ?? 'flat');
   if (!SHAPES.includes(shape)) return { error: 'The shape is flat, grow or curve.', field: 'shape' };
   config.shape = shape;
+  // The continuous shape, when given; without it, the named shape's end of the scale.
+  const tiltRaw = input?.shapeTilt;
+  if (tiltRaw !== undefined && tiltRaw !== null && String(tiltRaw).trim() !== '') {
+    const t = Number(tiltRaw);
+    if (!Number.isFinite(t) || t < -1 || t > 1) return { error: 'The shape is from -1 (Bid-Ask) to 1 (Curve).', field: 'shapeTilt' };
+    config.shapeTilt = Math.round(t * 100) / 100; config.shape = tiltName(config.shapeTilt);
+  } else config.shapeTilt = shape === 'grow' ? -1 : shape === 'curve' ? 1 : 0;
+  for (const k of ['minAsk', 'maxBid']) {
+    const raw = String(input?.[k] ?? '').trim().replace(/,/g, '');
+    if (raw === '' || raw === 'null') { config[k] = null; continue; }
+    const v = Number(raw);
+    if (!(v > 0) || v > 100) return { error: `${k === 'minAsk' ? 'The lowest ask price' : 'The highest bid price'} is a price like 0.003, or empty.`, field: k };
+    config[k] = v;
+  }
+  if (config.minAsk && config.maxBid && config.maxBid >= config.minAsk) return { error: 'The highest bid must be under the lowest ask.', field: 'maxBid' };
+  // Which venues' prices can fill a paper rung (MEXC and PandaPools before this was a choice).
+  const venues = Array.isArray(input?.venues) ? input.venues.filter((v) => MM_VENUES.includes(v)) : ['MEXC', 'POOL'];
+  if (!venues.length) return { error: 'Pick at least one venue for the fills.', field: 'venues' };
+  config.venues = [...new Set(venues)];
   return { config };
 }
 
@@ -87,11 +113,13 @@ export function createMaker(file) {
     const c = state.config, f = state.feed;
     if (!(f.mid > 0) || now - f.at > HARD_STALE_MS) return [];
     const mid = f.mid * (1 + c.skew / 100), k = widen(now), n = Math.min(MAX_LEVELS, c.levels), out = [];
-    const w = shapeWeights(c.shape, n);
+    const w = shapeWeights(c.shape, n, c.shapeTilt);
     for (let i = 1; i <= n; i++) {
       const off = ((c.spread + (i - 1) * c.step) * k) / 100;
-      if (c.askSize > 0) out.push({ key: `A${i}`, side: 'sell', price: up8(mid * (1 + off)), qty: down8(c.askSize * w[i - 1]) });
-      if (c.bidSize > 0 && 1 - off > 0) out.push({ key: `B${i}`, side: 'buy', price: down8(mid * (1 - off)), qty: down8(c.bidSize * w[i - 1]) });
+      // Optional limits: no ask under the lowest ask price, no bid over the highest bid price (those rungs are left out).
+      const ask = up8(mid * (1 + off)), bid = down8(mid * (1 - off));
+      if (c.askSize > 0 && !(c.minAsk && ask < c.minAsk)) out.push({ key: `A${i}`, side: 'sell', price: ask, qty: down8(c.askSize * w[i - 1]) });
+      if (c.bidSize > 0 && 1 - off > 0 && !(c.maxBid && bid > c.maxBid)) out.push({ key: `B${i}`, side: 'buy', price: bid, qty: down8(c.bidSize * w[i - 1]) });
     }
     return out;
   }
@@ -103,7 +131,8 @@ export function createMaker(file) {
     const poolOpen = print !== state.lastPoolFill;
     const flat = (side) => {
       const tag = (v) => (rows) => rows.map((r) => ({ price: r.price, qty: r.qty, v }));
-      const rows = [...tag('MEXC')(s.books.MEXC[side]), ...(poolOpen ? tag('POOL')(s.books.POOL[side]) : [])];
+      const use = state.config.venues || ['MEXC', 'POOL'];
+      const rows = use.flatMap((v) => (v === 'POOL' ? (poolOpen ? tag('POOL')(s.books.POOL?.[side] ?? []) : []) : tag(v)(s.books[v]?.[side] ?? [])));
       return rows.sort((a, b) => (side === 'bids' ? b.price - a.price : a.price - b.price));
     };
     const bids = flat('bids'), asks = flat('asks');

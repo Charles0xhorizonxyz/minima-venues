@@ -15,9 +15,21 @@ export const NODE_DEFAULTS = {
   javaPath: 'java',
   jarPath: path.join(NODES, 'minima.jar'),
   dataDir: path.join(NODES, 'TradingBot', 'data'),
-  basePort: 9501, memoryMb: 1024, peers: '', watchRpc: '', useForScan: false,
+  basePort: 9501, memoryMb: 1024, peers: '', watchRpc: '', useForScan: false, autoStart: false,
 };
-const NODE_COMMANDS = new Set(['block', 'status', 'balance', 'keys', 'connect', 'quit', 'megammrsync']);
+const NODE_COMMANDS = new Set(['block', 'status', 'balance', 'keys', 'connect', 'quit', 'megammrsync', 'maxima', 'maxcontacts', 'webhooks']);
+// Maxima, for Parlons: only these exact shapes. Nothing here spends, signs or reads a seed; the webhook can only point
+// at this dashboard on this computer, and messages only go to a contact's public key as MaxSolo chat.
+const MAXIMA_CMDS = [
+  /^maxima action:info$/,
+  /^maxima action:setname name:[A-Za-z0-9_-]{1,32}$/,
+  /^maxima action:send publickey:0x[0-9A-F]{40,1200} application:maxsolo data:0x[0-9A-F]{2,8000} poll:true$/,
+  /^maxcontacts action:list$/,
+  /^maxcontacts action:add contact:Mx[0-9A-Z]{20,700}@[A-Za-z0-9.-]{1,253}:[0-9]{1,5}$/,
+  /^webhooks$/,
+  /^webhooks action:add hook:http:\/\/127\.0\.0\.1:[0-9]{2,5}\/api\/hook\/[0-9a-f]{48} filter:MAXIMA$/,
+  /^webhooks action:remove hook:MAXIMA#http:\/\/127\.0\.0\.1:[0-9]{2,5}\/api\/hook\/[0-9a-f]{48}$/,
+];
 // A chain resync from a MegaMMR node: the wallet and its keys stay as they are. Only this exact shape is ever sent, so a
 // seed phrase, a backup file or a password can never travel through here.
 const RESYNC_CMD = /^megammrsync action:resync host:[A-Za-z0-9.-]{1,253}:[0-9]{1,5}$/;
@@ -42,6 +54,7 @@ function call(rpc, cmd, timeout = 12000) {
   const verb = cmd.split(' ')[0];
   if (!NODE_COMMANDS.has(verb) || cmd.includes(';')) return Promise.reject(new Error(`refused: ${verb}`));
   if (verb === 'megammrsync' && !RESYNC_CMD.test(cmd)) return Promise.reject(new Error('refused: only a chain resync from a host'));
+  if (['maxima', 'maxcontacts', 'webhooks'].includes(verb) && !MAXIMA_CMDS.some((re) => re.test(cmd))) return Promise.reject(new Error(`refused: that ${verb} command`));
   if (isShared(rpc)) return Promise.reject(new Error('refused: that node is shared with other projects'));
   return new Promise((resolve, reject) => {
     const body = Buffer.from(cmd, 'utf8');
@@ -74,7 +87,7 @@ function validate(input, old) {
   if (peers && !peers.split(',').every((p) => PEER.test(p.trim()))) return { error: 'Peers are host:port, separated by commas.', field: 'peers' };
   const watch = String(input?.watchRpc ?? '').trim();
   if (watch && (!/^https?:\/\/[^\s/]+\/?$/.test(watch) || isShared(watch))) return { error: 'Enter a node address like http://203.0.113.5:9505, and not one of the shared nodes.', field: 'watchRpc' };
-  Object.assign(c, { basePort: port, memoryMb: mem, peers: peers.split(',').map((p) => p.trim()).filter(Boolean).join(','), watchRpc: watch.replace(/\/$/, ''), useForScan: !!input?.useForScan });
+  Object.assign(c, { basePort: port, memoryMb: mem, peers: peers.split(',').map((p) => p.trim()).filter(Boolean).join(','), watchRpc: watch.replace(/\/$/, ''), useForScan: !!input?.useForScan, autoStart: !!input?.autoStart });
   return { config: c };
 }
 
@@ -88,7 +101,17 @@ export function createNode(file) {
   const save = () => { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, JSON.stringify({ config, run })); };
   const rpc = () => config.watchRpc || `http://127.0.0.1:${config.basePort + 4}`;
   const logFile = () => path.join(path.dirname(config.dataDir), 'node-out.log');
-  const pidAlive = (pid) => { try { process.kill(pid, 0); return true; } catch { return false; } };
+  // Alive and still a node: on Linux a finished process can linger as a zombie, or its number can be reused.
+  const pidAlive = (pid) => {
+    try { process.kill(pid, 0); } catch { return false; }
+    if (process.platform === 'linux') {
+      try {
+        if (/\) Z /.test(fs.readFileSync(`/proc/${pid}/stat`, 'utf8'))) return false;
+        if (!fs.readFileSync(`/proc/${pid}/cmdline`, 'utf8').includes('java')) return false;
+      } catch { return false; }
+    }
+    return true;
+  };
 
   async function refresh() {
     const url = rpc();
@@ -196,6 +219,8 @@ export function createNode(file) {
 
   return {
     refresh, setConfig, start, stop, addPeer, resync,
+    // Maxima for Parlons, through the same allow-list; only on a node running on this computer (the webhook calls back here).
+    maxima: (cmd, timeout) => (/^http:\/\/127\.0\.0\.1:/.test(rpc()) ? call(rpc(), cmd, timeout) : Promise.reject(new Error('Parlons needs the bot node on this computer'))),
     view: () => ({ config, rpc: rpc(), phase: phase(), watching: !!config.watchRpc, startedHere: !!run, live, error: lastError, log: tailLog(), resync: resyncing, megammr: MEGAMMR_HOSTS }),
     // The node the venue scan should read: this one once it is healthy, otherwise null (the default read node).
     scanTarget: () => (config.useForScan && live && live.tipAge < HEALTHY_TIP_AGE ? rpc() : null),

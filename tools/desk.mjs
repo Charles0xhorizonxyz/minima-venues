@@ -3,7 +3,7 @@
  * Handshake rules, as code:
  *   2  Nothing is sent without a run whose evidence/<run>/ENVELOPE.md was written first (by writeEnvelope). Its caps
  *      cannot be changed once written; new caps mean a new run. Results are added to RESULTS.md beside it.
- *   3  Pool trades go only through the bot's own node (pool-trade.mjs refuses the shared ones).
+ *   3  Pool trades go only through its own node (pool-trade.mjs refuses the shared ones).
  *   7  A post with no clear answer is `unknown`: the desk disarms, blocks everything, and a person must look.
  *   8  The journal records a trade before it is posted, and a trade left open by a restart becomes `unknown`.
  *   9  A route whose second leg did not fully fill is `one-legged`: reported, and that route is blocked until released.
@@ -32,6 +32,9 @@ const ACTIONS = {
   'route-pool-mexc': 'Route: buy on the pools, sell on MEXC', 'route-mexc-pool': 'Route: sell on the pools, buy on MEXC',
   'route-pool-xt': 'Route: buy on the pools, sell on XT', 'route-xt-pool': 'Route: sell on the pools, buy on XT',
 };
+// Not trades, but kept in the journal beside them.
+const OTHER_KINDS = { cancel: 'Cancel an order', modify: 'Modify an order (cancel, then rest a new one)', rest: 'A resting order' };
+const RESTING_KINDS = ['rest', 'modify'];
 const PREVIEW_SECONDS = 45, MAX_TIP_AGE = 180;
 const WATCH_EVERY = 10000, WATCH_LIMIT = 30 * 60000;
 const DECS = /^\d+(\.\d+)?$/;
@@ -112,18 +115,20 @@ export function createDesk({ root, node, clients, depths, timing, token = MXUSD,
 
   function nodeHealth() {
     const v = node.view();
-    if (isShared(node.rpc())) return 'The node set in Connections is shared with other projects. The desk trades only through the bot node.';
-    if (v.phase !== 'running' || !v.live) return 'The bot node is not running.';
-    if (v.live.tipAge > MAX_TIP_AGE) return `The bot node is behind: its last block is ${v.live.tipAge} s old.`;
-    if (v.live.locked) return 'The bot node wallet is locked.';
+    if (isShared(node.rpc())) return 'The node set in Connections is shared with other projects. The desk trades only through the node.';
+    if (v.phase !== 'running' || !v.live) return 'The node is not running.';
+    if (v.live.tipAge > MAX_TIP_AGE) return `The node is behind: its last block is ${v.live.tipAge} s old.`;
+    if (v.live.locked) return 'The node wallet is locked.';
     return null;
   }
-  function notReady(action, { forPreview = false } = {}) {
+  // Arming is for what the desk does by itself (take when crossed, the taker). A person's own trade needs live mode and
+  // an envelope, not arming (founder, 2026-11-11).
+  function notReady(action, { forPreview = false, auto = false } = {}) {
     if (!ACTIONS[action]) return 'Unknown action.';
     if (!st.envelope) return 'Write an envelope first.';
     if (!st.envelope.actions.includes(action)) return 'The envelope does not allow this action.';
     if (!forPreview && isPaper()) return 'The app is in paper mode: nothing real is sent. Switch to live in Settings.';
-    if (!forPreview && !st.armed) return 'The desk is not armed.';
+    if (!forPreview && auto && !st.armed) return 'The desk is not armed: automatic trading is off.';
     const b = st.blocks.find((x) => x.action === 'all' || x.action === action);
     if (b && !forPreview) return `Blocked: ${b.why}`;
     if (!forPreview && busy) return `Another trade is running (${busy}).`;
@@ -206,7 +211,7 @@ export function createDesk({ root, node, clients, depths, timing, token = MXUSD,
       caps.autoTake ? 'new caps need a new run. Trades are pressed by a person, and the desk also takes crossed routes by itself (below).'
         : 'new caps need a new run. Every trade is pressed by a person; nothing trades on its own.', '',
       `- **Node:** ${env.node}, the bot's own.`,
-      wallet ? `- **Wallet:** the bot node's wallet, payout address \`${wallet.address}\`. Sendable when written: ${wallet.minima} MINIMA, ${wallet.mxusd} MxUSD.` : '- **Wallet:** not used by this run.',
+      wallet ? `- **Wallet:** the node's wallet, payout address \`${wallet.address}\`. Sendable when written: ${wallet.minima} MINIMA, ${wallet.mxusd} MxUSD.` : '- **Wallet:** not used by this run.',
       ...(venues.length ? venues.map((x) => `- **${EX[x].name}:** key ending ${exchanges[x].keyEnd}. Balance when written: ${exchanges[x].MINIMA.free} MINIMA, ${exchanges[x].USDT.free} USDT free. Taker fee taken as ${Number(EX[x].fee) * 100}%.`) : ['- **Exchanges:** not used by this run.']),
       `- **Actions allowed:** ${actions.map((a) => ACTIONS[a]).join('; ')}.`,
       `- **Size cap:** at most ${caps.maxMinima} MINIMA and ${caps.maxMxusd} MxUSD in one trade, ${caps.tradesPerDay} trades a day.`,
@@ -347,7 +352,7 @@ export function createDesk({ root, node, clients, depths, timing, token = MXUSD,
     if (!p) return { error: 'Preview first, or this preview was already sent.' };
     if (Date.now() - p.at > PREVIEW_SECONDS * 1000) return { error: `That preview is over ${PREVIEW_SECONDS} s old. Preview again.` };
     if (p.run !== st.run) return { error: 'That preview was made under another envelope. Preview again.' };
-    const nr = notReady(p.action); if (nr) return { error: nr };
+    const nr = notReady(p.action, { auto: body?.auto === true }); if (nr) return { error: nr };
     const env = st.envelope;
     if (sentToday() >= env.tradesPerDay) return { error: `Today's ${env.tradesPerDay} trades are used.` };
     if (sentToday(true) >= CEILING.tradesPerDay) return { error: `Today's ${CEILING.tradesPerDay} trades across all runs are used.` };
@@ -362,7 +367,7 @@ export function createDesk({ root, node, clients, depths, timing, token = MXUSD,
       const need = p.ex.side === 'BUY' ? new D(p.ex.qty).times(p.ex.limit).times(D(1).plus(EX[p.ex.venue].fee)) : new D(p.ex.qty);
       const have = p.ex.side === 'BUY' ? b.USDT.free : b.MINIMA.free;
       if (new D(have).lt(need)) return free({ error: `${name} has ${have} ${p.ex.side === 'BUY' ? 'USDT' : 'MINIMA'} free, the trade needs ${need.toDP(4).toString()}.` });
-      if (!st.armed) return free({ error: 'The desk was disarmed meanwhile.' });
+      if (body?.auto === true && !st.armed) return free({ error: 'The desk was disarmed meanwhile.' });
     }
     st.seq += 1; save();
     const id = `t${Date.now().toString(36)}${crypto.randomBytes(2).toString('hex')}`;   // never repeats, whatever desk.json holds
@@ -483,6 +488,7 @@ export function createDesk({ root, node, clients, depths, timing, token = MXUSD,
 
   const auto = { lastAt: 0, checkedAt: null, note: null, running: false };
   async function onScan(s) {
+    await trackResting().catch(() => {});
     await takerScan().catch(() => {});
     const env = st.envelope;
     if (isPaper()) return;
@@ -525,6 +531,15 @@ export function createDesk({ root, node, clients, depths, timing, token = MXUSD,
   function pnl(mid) {
     let cash = 0, minima = 0, fees = 0, trades = 0, since = null;
     for (const e of entries.values()) {
+      if (RESTING_KINDS.includes(e.kind)) {
+        const f = e.exFill;
+        if (f?.done && Number(f.executedQty) > 0) {
+          const q = Number(f.executedQty), u = Number(f.quoteQty), fee = u * Number(EX[e.venue]?.fee ?? 0);   // the taker fee: a cautious estimate
+          if (e.exOrder?.side === 'BUY') { minima += q; cash -= u; } else { minima -= q; cash += u; }
+          cash -= fee; fees += fee; trades++; since = since === null ? e.at : Math.min(since, e.at);
+        }
+        continue;
+      }
       if (!ACTIONS[e.kind] || !['done', 'one-legged', 'unfilled'].includes(e.status)) continue;
       const pv = e.preview || {};
       if (pv.pool && (e.status === 'done' || e.poolDone)) {
@@ -546,12 +561,115 @@ export function createDesk({ root, node, clients, depths, timing, token = MXUSD,
   function view(mid) {
     const list = [...entries.values()].filter((e) => e.kind !== undefined).sort((a, b) => (b.at ?? 0) - (a.at ?? 0)).slice(0, 100);
     return {
-      run: st.run, envelope: st.envelope, armed: st.armed, blocks: st.blocks, busy, lastError, actions: ACTIONS, ceiling: CEILING,
+      run: st.run, envelope: st.envelope, armed: st.armed, blocks: st.blocks, busy, lastError, actions: ACTIONS, kinds: { ...ACTIONS, ...OTHER_KINDS }, ceiling: CEILING,
       today: st.run ? sentToday() : 0, runPnl: st.run ? runPnl() : 0, nodeProblem: nodeHealth(),
       exchanges: Object.fromEntries(Object.entries(EX).map(([k, v]) => [k, { name: v.name, fee: v.fee, connected: !!clients[k]?.connected() }])),
       auto: { ...auto }, taker: { lastAt: taker.lastAt, note: taker.note }, pnl: pnl(mid), journal: list,
     };
   }
 
-  return { writeEnvelope, arm, disarm, release, preview, send, view, onScan, armed: () => st.armed };
+  // ---------------------------------------------------------------- cancel and modify open exchange orders
+  /* Cancel: any open order on MEXC or XT, this desk's or one placed by hand, in live mode, armed or not (it only
+   * removes an order). Modify: cancel, check it ended, then a post-only order at the new price that rests on the book;
+   * that one is placed only while armed, within the envelope, and counts as one of the day's trades. */
+  const PX = /^\d{1,3}(\.\d{1,5})?$/, QX = /^\d{1,9}(\.\d{1,2})?$/;
+  async function cancelOrder(body) {
+    const venue = String(body?.venue ?? ''), orderId = String(body?.orderId ?? '');
+    if (!EX[venue]) return { error: 'The venue is MEXC or XT.' };
+    if (isPaper()) return { error: 'The app is in paper mode: nothing real is sent. Switch to live in Settings.' };
+    if (!clients[venue]?.connected()) return { error: `No ${EX[venue].name} key is connected.` };
+    if (busy) return { error: `Another trade is running (${busy}).` };
+    busy = `cancelling on ${EX[venue].name}`;
+    const id = `c${Date.now().toString(36)}${crypto.randomBytes(2).toString('hex')}`;
+    try {
+      record({ id, run: st.run, kind: 'cancel', label: `Cancel ${EX[venue].name} order ${orderId}`, status: 'sending', at: Date.now(), venue, orderId });
+      const r = await clients[venue].cancelOrder({ orderId });
+      if (r.refused) { record({ id, status: 'refused', note: r.why }); return { error: `${EX[venue].name}: ${r.why}` }; }
+      if (r.unknown) { record({ id, status: 'unknown', note: r.why }); return { error: `${r.why}. Look at it on ${EX[venue].name}.` }; }
+      const filled = Number(r.executedQty) > 0 ? `, ${r.executedQty} of ${r.origQty} had filled` : '';
+      record({ id, status: 'done', note: `${r.status === 'FILLED' ? 'it had filled before the cancel' : 'cancelled'}${filled}` });
+      return { ok: true, status: r.status, executedQty: r.executedQty, origQty: r.origQty };
+    } finally { busy = null; }
+  }
+
+  /* A resting order: checked first (armed, envelope, caps, it must not trade at once, near the market), then placed
+   * post-only. Used by a right-click on the chart (rest) and by modify, after its cancel. */
+  async function checkResting(body) {
+    const venue = String(body?.venue ?? ''), side = String(body?.side ?? '');
+    const price = String(body?.price ?? '').trim(), quantity = String(body?.quantity ?? '').trim();
+    if (!EX[venue]) return { error: 'The venue is MEXC or XT.' };
+    if (side !== 'buy' && side !== 'sell') return { error: 'The side is buy or sell.' };
+    const action = `${venue}-${side}`, nr = notReady(action); if (nr) return { error: nr };
+    if (!PX.test(price) || !(Number(price) > 0)) return { error: 'A price has at most 5 decimals, like 0.00301.', field: 'price' };
+    if (!QX.test(quantity) || !(Number(quantity) > 0)) return { error: 'An amount of MINIMA, at most 2 decimals.', field: 'quantity' };
+    const env = st.envelope, q = new D(quantity), p = new D(price), value = q.times(p);
+    if (q.gt(env.maxMinima) || q.gt(CEILING.minimaPerTrade)) return { error: `The envelope allows at most ${env.maxMinima} MINIMA per order.`, field: 'quantity' };
+    if (value.gt(env.maxMxusd) || value.gt(CEILING.mxusdPerTrade)) return { error: `The envelope allows at most ${env.maxMxusd} USDT per order (this one is ${value.toDP(2).toString()}).`, field: 'quantity' };
+    if (value.lt(EX[venue].minQuote)) return { error: `${EX[venue].name} needs at least ${EX[venue].minQuote} USDT per order.`, field: 'quantity' };
+    if (sentToday() >= env.tradesPerDay) return { error: `Today's ${env.tradesPerDay} trades are used.` };
+    if (sentToday(true) >= CEILING.tradesPerDay) return { error: `Today's ${CEILING.tradesPerDay} trades across all runs are used.` };
+    let best; try { best = await depths[venue](5); } catch (e) { return { error: `${EX[venue].name}'s book could not be read: ${e.message}` }; }
+    const ask = best.asks[0]?.price, bid = best.bids[0]?.price;
+    if (side === 'buy' && ask && p.gte(ask)) return { error: `At ${price} a buy would trade at once (best ask ${ask}). Use the ticket for that.`, field: 'price' };
+    if (side === 'sell' && bid && p.lte(bid)) return { error: `At ${price} a sell would trade at once (best bid ${bid}). Use the ticket for that.`, field: 'price' };
+    const mid = ask && bid ? (Number(ask) + Number(bid)) / 2 : null;
+    if (mid && Math.abs(Number(price) / mid - 1) > 0.3) return { error: 'That price is more than 30% from the market. Check the price.', field: 'price' };
+    return { ok: true, venue, side, price, quantity, action, value, q };
+  }
+
+  async function placeResting(c, { label, kind, before = '' }) {
+    const { venue, side, price, quantity, action, value, q } = c;
+    busy = `placing on ${EX[venue].name}`;
+    const id = `${kind[0]}${Date.now().toString(36)}${crypto.randomBytes(2).toString('hex')}`, clientId = `tb${Date.now().toString(36)}${crypto.randomBytes(2).toString('hex')}`;
+    try {
+      let b; try { b = await clients[venue].balances(); } catch (e) { return { error: `${before}Not placed: ${EX[venue].name} balances could not be read (${e.message}).` }; }
+      const need = side === 'buy' ? value : q, have = side === 'buy' ? b.USDT.free : b.MINIMA.free;
+      if (new D(have).lt(need)) return { error: `${before}Not placed: ${EX[venue].name} has ${have} ${side === 'buy' ? 'USDT' : 'MINIMA'} free, it needs ${need.toDP(4).toString()}.` };
+      st.seq += 1; save();
+      record({ id, run: st.run, kind, label, status: 'sending', at: Date.now(), sentAt: Date.now(), exClientId: clientId, venue, exOrder: { venue, side: side.toUpperCase(), qty: quantity, limit: price } });
+      const r = await clients[venue].restingOrder({ side: side.toUpperCase(), quantity, price, clientId });
+      if (r.refused) { record({ id, status: 'refused', note: r.why }); return { error: `${before}Refused: ${r.why}` }; }
+      if (r.unknown) {
+        record({ id, status: 'unknown', note: r.why });
+        block(action, `A resting order (${clientId}) on ${EX[venue].name} may or may not be on the book: ${r.why}. Look on ${EX[venue].name}, then release.`, id);
+        return { error: `${before}Unclear: ${r.why}. ${ACTIONS[action]} is blocked until you check.` };
+      }
+      record({ id, status: 'resting', note: `${r.status}, order ${r.orderId}`, exOrderId: r.orderId });
+      return { ok: true, orderId: r.orderId, status: r.status, entry: id };
+    } finally { busy = null; }
+  }
+
+  async function restOrder(body) {
+    const c = await checkResting(body); if (c.error) return c;
+    return placeResting(c, { kind: 'rest', label: `${c.side === 'buy' ? 'Buy' : 'Sell'} ${c.quantity} MINIMA resting at ${c.price} on ${EX[c.venue].name}` });
+  }
+
+  async function modifyOrder(body) {
+    const orderId = String(body?.orderId ?? '');
+    const c = await checkResting(body); if (c.error) return c;
+    const x = await cancelOrder({ venue: c.venue, orderId });
+    if (x.error) return { error: `Not modified: the cancel failed. ${x.error}` };
+    if (x.status === 'FILLED') return { error: 'Not modified: the order filled before the cancel. Nothing new was placed.' };
+    return placeResting(c, { kind: 'modify', before: 'Cancelled. ', label: `${c.side === 'buy' ? 'Buy' : 'Sell'} ${c.quantity} MINIMA resting at ${c.price} on ${EX[c.venue].name} (replaces ${orderId})` });
+  }
+
+  /* The desk's resting orders, followed after each scan: fills go into the journal (and so the P&L) as they happen. */
+  let tracking = false;
+  async function trackResting() {
+    if (tracking) return; tracking = true;
+    try {
+      const open = [...entries.values()].filter((e) => RESTING_KINDS.includes(e.kind) && e.status === 'resting' && e.exClientId).slice(0, 30);
+      for (const e of open) {
+        let o; try { o = await clients[e.venue]?.orderStatus?.(e.exClientId); } catch { continue; }
+        if (!o) continue;
+        const qty = String(o.executedQty ?? '0'), quote = String(o.quoteQty ?? '0');
+        const fill = Number(qty) > 0 ? { done: true, executedQty: qty, quoteQty: quote } : e.exFill;
+        const ended = ['FILLED', 'CANCELED', 'PARTIALLY_CANCELED', 'REJECTED', 'EXPIRED'].includes(o.status);
+        const status = !ended ? 'resting' : o.status === 'FILLED' ? 'filled' : Number(qty) > 0 ? 'partly filled' : 'cancelled';
+        if (status !== e.status || qty !== (e.exFill?.executedQty ?? '0')) record({ id: e.id, status, exFill: fill, note: `${o.status}${Number(qty) > 0 ? `, ${qty} filled for ${quote} USDT` : ''}` });
+      }
+    } finally { tracking = false; }
+  }
+
+  return { writeEnvelope, arm, disarm, release, preview, send, view, onScan, cancelOrder, modifyOrder, restOrder, trackResting, armed: () => st.armed };
 }

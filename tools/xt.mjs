@@ -14,7 +14,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFile } from 'node:child_process';
+import { secrets, secretDir } from './secrets.mjs';
 
 export const XT_SYMBOL = 'minima_usdt';
 const CALLS = new Set(['GET /v4/balances', 'GET /v4/open-order', 'POST /v4/order', 'GET /v4/order', 'DELETE /v4/order/:id']);
@@ -24,25 +24,13 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const envBase = process.env.XT_BASE;   // tests only: a stand-in on this computer
 const BASE = envBase && /^http:\/\/127\.0\.0\.1:\d+$/.test(envBase) ? envBase : 'https://sapi.xt.com';
-const SECRET_FILE = path.join(process.env.LOCALAPPDATA || '.', process.env.TRADING_SECRET_DIR || 'Trading', 'xt.dpapi');
-
-function powershell(script, input) {
-  return new Promise((resolve, reject) => {
-    const child = execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], { windowsHide: true, maxBuffer: 1 << 20 }, (err, out) => {
-      if (err) reject(new Error('Windows could not protect or read the key.')); else resolve(String(out).trim());
-    });
-    child.stdin.end(input, 'utf8');
-  });
-}
-const protect = (text) => powershell('Add-Type -AssemblyName System.Security; $s=[Console]::In.ReadToEnd(); $b=[Security.Cryptography.ProtectedData]::Protect([Text.Encoding]::UTF8.GetBytes($s),$null,"CurrentUser"); [Console]::Out.Write([Convert]::ToBase64String($b))', text);
-const unprotect = (b64) => powershell('Add-Type -AssemblyName System.Security; $s=[Console]::In.ReadToEnd().Trim(); $b=[Security.Cryptography.ProtectedData]::Unprotect([Convert]::FromBase64String($s),$null,"CurrentUser"); [Console]::Out.Write([Text.Encoding]::UTF8.GetString($b))', b64);
+const SECRET_FILE = path.join(secretDir(), 'xt.dpapi');
 
 export function xtSignature(secret, { method, path: p, query = '', body = '', appKey, timestamp, recvWindow = '10000' }) {
   const X = `validate-algorithms=HmacSHA256&validate-appkey=${appKey}&validate-recvwindow=${recvWindow}&validate-timestamp=${timestamp}`;
   const Y = `#${method}#${p}${query ? `#${query}` : ''}${body ? `#${body}` : ''}`;
   return crypto.createHmac('sha256', secret).update(X + Y).digest('hex');
 }
-
 /* rc 0 is success. Any answer with another rc is a refusal (e.refused): XT did not act. No answer, a broken one or a 5xx may
  * have been acted on (e.unclear). */
 async function signed(key, method, p, { params = {}, body = null, id = null } = {}) {
@@ -76,16 +64,22 @@ export function createXt() {
   let key = null, keyLoaded = false;
   const info = { connected: false, keyEnd: null, error: null, balances: null, openOrders: [], readAt: null };
 
+  // A locked key store (a server after a restart) is tried again once it is unlocked: see reloadKey.
   async function loadKey() {
     if (keyLoaded) return;
     keyLoaded = true;
     try {
       const blob = fs.readFileSync(SECRET_FILE, 'utf8').trim();
       if (!blob) return;
-      key = JSON.parse(await unprotect(blob));
-      info.connected = true; info.keyEnd = key.apiKey.slice(-4);
-    } catch (e) { if (e.code !== 'ENOENT') info.error = 'The stored XT key could not be read. Connect it again.'; }
+      key = JSON.parse(await secrets.unprotect(blob));
+      info.connected = true; info.keyEnd = key.apiKey.slice(-4); info.locked = false; info.error = null;
+    } catch (e) {
+      if (e.locked) { keyLoaded = false; info.locked = true; info.error = 'The key store is locked: unlock it in Connections.'; }
+      else if (e.code !== 'ENOENT') info.error = 'The stored XT key could not be read. Connect it again.';
+    }
   }
+  const reloadKey = () => { keyLoaded = false; return loadKey(); };
+  const hasStoredKey = () => { try { return fs.readFileSync(SECRET_FILE, 'utf8').trim().length > 0; } catch { return false; } };
 
   async function readBalances(k) {
     const r = await signed(k, 'GET', '/v4/balances', { params: { currencies: 'minima,usdt' } });
@@ -99,7 +93,7 @@ export function createXt() {
     try {
       info.balances = await readBalances(key);
       const open = await signed(key, 'GET', '/v4/open-order', { params: { bizType: 'SPOT', symbol: XT_SYMBOL } });
-      info.openOrders = (Array.isArray(open) ? open : []).map((o) => ({ side: o.side === 'BUY' ? 'buy' : 'sell', price: Number(o.price), qty: Number(o.leavingQty ?? (Number(o.origQty) - Number(o.executedQty || 0))), filled: Number(o.executedQty || 0), time: Number(o.time), ours: String(o.clientOrderId ?? '').startsWith('tb') }));
+      info.openOrders = (Array.isArray(open) ? open : []).map((o) => ({ side: o.side === 'BUY' ? 'buy' : 'sell', price: Number(o.price), qty: Number(o.leavingQty ?? (Number(o.origQty) - Number(o.executedQty || 0))), filled: Number(o.executedQty || 0), time: Number(o.time), ours: String(o.clientOrderId ?? '').startsWith('tb'), id: String(o.orderId ?? '') }));
       info.readAt = Date.now(); info.error = null;
     } catch (e) { info.error = e.message; }
   }
@@ -112,9 +106,9 @@ export function createXt() {
     let balances;
     try { balances = await readBalances(candidate); } catch (e) { return { error: `Not saved. ${e.message}` }; }
     let blob;
-    try { blob = await protect(JSON.stringify(candidate)); } catch (e) { return { error: e.message }; }
+    try { blob = await secrets.protect(JSON.stringify(candidate)); } catch (e) { return { error: e.message }; }
     fs.mkdirSync(path.dirname(SECRET_FILE), { recursive: true });
-    fs.writeFileSync(SECRET_FILE, blob);
+    fs.writeFileSync(SECRET_FILE, blob, { mode: 0o600 });
     key = candidate; keyLoaded = true;
     Object.assign(info, { connected: true, keyEnd: apiKey.slice(-4), error: null, balances });
     sync();
@@ -157,7 +151,48 @@ export function createXt() {
     return { done: true, status: o.state, executedQty: String(o.executedQty ?? '0'), quoteQty: String(o.tradeQuote ?? '0'), fee: String(o.fee ?? '0'), feeCurrency: o.feeCurrency ?? null, orderId: o.orderId ?? orderId, clientId };
   }
 
+  async function cancelOrder({ orderId }) {
+    await loadKey();
+    if (!key) return { refused: true, why: 'no XT key is connected' };
+    if (!/^[0-9]{1,30}$/.test(String(orderId))) return { refused: true, why: 'that is not an order id' };
+    const ask = () => signed(key, 'GET', '/v4/order', { params: { orderId } });
+    let refusal = null;
+    try { await signed(key, 'DELETE', `/v4/order/${orderId}`, { id: true }); } catch (e) { if (e.refused) refusal = e.message; }
+    for (let i = 0; i < 5; i++) {
+      await sleep(i ? 1000 : 400);
+      try { const o = await ask(); if (ENDED.includes(o?.state)) { sync(); return { done: true, status: o.state, executedQty: String(o.executedQty ?? '0'), origQty: String(o.origQty ?? '0') }; } } catch { /* again */ }
+    }
+    return refusal ? { refused: true, why: refusal } : { unknown: true, why: 'the cancel was sent and the order could not be read back as ended' };
+  }
+
+  /* A post-only order that rests on the book (timeInForce GTX): XT rejects it rather than let it trade at once. */
+  async function restingOrder({ side, quantity, price, clientId }) {
+    await loadKey();
+    if (!key) return { refused: true, why: 'no XT key is connected' };
+    if (!/^(BUY|SELL)$/.test(side) || !QTY.test(quantity) || !PRICE.test(price) || !CLIENT_ID.test(clientId) || !(Number(quantity) > 0) || !(Number(price) > 0)) return { refused: true, why: 'the order is not well formed' };
+    const ask = () => signed(key, 'GET', '/v4/order', { params: { clientOrderId: clientId } });
+    let orderId = null;
+    try { orderId = (await signed(key, 'POST', '/v4/order', { body: { symbol: XT_SYMBOL, clientOrderId: clientId, side, type: 'LIMIT', timeInForce: 'GTX', bizType: 'SPOT', price, quantity } }))?.orderId ?? null; }
+    catch (e) {
+      if (e.refused) return { refused: true, why: e.message };
+      for (let i = 0; i < 4 && !orderId; i++) { await sleep(2500); try { orderId = (await ask())?.orderId ?? null; } catch { /* not there yet */ } }
+      if (!orderId) return { unknown: true, why: `${e.message}, and no order named ${clientId} could be found` };
+    }
+    let o = null;
+    for (let i = 0; i < 4 && !o; i++) { await sleep(1000); try { o = await ask(); } catch { /* again */ } }
+    sync();
+    if (!o) return { unknown: true, why: `XT order ${clientId} was placed and could not be read back`, orderId };
+    if (['CANCELED', 'REJECTED', 'EXPIRED'].includes(o.state) && !(Number(o.executedQty) > 0)) return { refused: true, why: 'XT did not keep it: at that price it would have traded at once (post-only)' };
+    return { done: true, status: o.state, executedQty: String(o.executedQty ?? '0'), orderId: o.orderId ?? orderId, clientId };
+  }
+
+  async function orderStatus(clientId) {
+    await loadKey(); if (!key || !CLIENT_ID.test(String(clientId))) return null;
+    const o = await signed(key, 'GET', '/v4/order', { params: { clientOrderId: clientId } });
+    return o ? { status: o.state, executedQty: String(o.executedQty ?? '0'), quoteQty: String(o.tradeQuote ?? '0') } : null;
+  }
+
   async function balances() { await loadKey(); if (!key) return null; info.balances = await readBalances(key); return info.balances; }
 
-  return { sync, connect, disconnect, loadKey, limitOrder, balances, connected: () => !!key, view: () => ({ ...info }) };
+  return { reloadKey, hasStoredKey, sync, connect, disconnect, loadKey, limitOrder, cancelOrder, restingOrder, orderStatus, balances, connected: () => !!key, view: () => ({ ...info }) };
 }

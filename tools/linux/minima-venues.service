@@ -1,0 +1,27 @@
+# The Minima Venues app on a Linux server, run by systemd. Copy to /etc/systemd/system/, adjust User and the paths,
+# then: systemctl daemon-reload && systemctl enable --now minima-venues
+#
+# The app listens on 127.0.0.1:8765 only: reach it from your laptop through SSH (ssh -L 8765:127.0.0.1:8765 user@server).
+# With "Start the node with the app" ticked in Connections, the app starts its Minima node after a reboot.
+# KillMode=process: a restart of the app leaves the node running (a killed node can damage its database; the app
+# stops it only with "quit").
+
+[Unit]
+Description=Minima Venues (dashboard and trading desk)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=venues
+WorkingDirectory=/opt/minima-venues
+ExecStart=/usr/bin/env node tools/server.mjs
+Restart=always
+RestartSec=10
+KillMode=process
+NoNewPrivileges=true
+StandardOutput=append:/opt/minima-venues/data/server.log
+StandardError=append:/opt/minima-venues/data/server.log
+
+[Install]
+WantedBy=multi-user.target
